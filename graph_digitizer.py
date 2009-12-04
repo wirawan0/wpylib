@@ -1,6 +1,6 @@
 #!/usr/bin/ipython -pylab
 #
-# $Id: graph_digitizer.py,v 1.1 2009-12-04 19:30:26 wirawan Exp $
+# $Id: graph_digitizer.py,v 1.2 2009-12-04 19:57:22 wirawan Exp $
 #
 # Created: 20091204
 # Wirawan Purwanto
@@ -10,24 +10,7 @@
 #
 
 import numpy
-
-def make_matrix(Str, debug=None):
-  """Simple tool to convert a string like
-    '''1 2 3
-    4 5 6
-    7 8 9'''
-  into a numpy matrix (or, actually, an array object)."""
-  if isinstance(Str, numpy.matrix):
-    return numpy.array(Str)
-  elif isinstance(Str, numpy.ndarray):
-    if len(Str.shape) == 2:
-      return Str.copy()
-    else:
-      raise ValueError, "Cannot make matrix out of non-2D array"
-  Str2 = ";".join([ row.rstrip().rstrip(";") for row in Str.split("\n") if row.strip() != "" ])
-  rslt = numpy.matrix(Str2)
-  if debug: print rslt
-  return numpy.array(rslt)
+from wpylib.text_tools import make_matrix
 
 def get_axis_scaler(data, axis):
   """Simple routine to obtain the scaling factor from pixel coordinate to
