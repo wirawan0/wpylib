@@ -1,4 +1,4 @@
-# $Id: shell_tools.py,v 1.1 2010-01-08 18:43:06 wirawan Exp $
+# $Id: shell_tools.py,v 1.2 2010-01-18 20:55:44 wirawan Exp $
 #
 # wpylib.shell_tools
 # Created: 20100106
@@ -31,4 +31,31 @@ def mcd(subdir):
     print >>sys.stderr, "mcd failed:", e
     raise
 
+
+def errchk(cmd, args, retcode):
+  if retcode == 0: return
+
+  print >>sys.stderr, "Error executing ", cmd, " ".join(args)
+  if retcode < 0:
+    err = "Command %s was terminated by signal %d" % (cmd, -retcode)
+  else:
+    err = "Command %s returned %d" % (cmd, retcode)
+  raise RuntimeError, err
+
+def run(prg, args):
+  retcode = subprocess.call((prg,) + args)
+  errchk(prg, args, retcode)
+  return 0
+
+
+# coreutils
+
+def cp(*args):
+  run('cp', args)
+
+def mkdir(*args):
+  run('mkdir', args)
+
+def mv(*args):
+  run('mv', args)
 
