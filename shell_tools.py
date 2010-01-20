@@ -1,4 +1,4 @@
-# $Id: shell_tools.py,v 1.2 2010-01-18 20:55:44 wirawan Exp $
+# $Id: shell_tools.py,v 1.3 2010-01-20 17:25:54 wirawan Exp $
 #
 # wpylib.shell_tools
 # Created: 20100106
@@ -42,10 +42,23 @@ def errchk(cmd, args, retcode):
     err = "Command %s returned %d" % (cmd, retcode)
   raise RuntimeError, err
 
+
 def run(prg, args):
   retcode = subprocess.call((prg,) + args)
   errchk(prg, args, retcode)
   return 0
+
+
+def pipe_out(args, split=False, shell=False):
+  """Executes a shell command, piping out the stdout to python for parsing.
+  This is my customary shortcut for backtick operator.
+  The result is either a single string (if split==False) or a list of strings
+  with EOLs removed (if split==True)."""
+  retval = subprocess.Popen(args, stdout=subprocess.PIPE, shell=shell).communicate()[0]
+  if not split:
+    return retval
+  else:
+    return retval.splitlines()
 
 
 # coreutils
