@@ -1,4 +1,4 @@
-# $Id: file_db.py,v 1.2 2010-02-08 01:46:12 wirawan Exp $
+# $Id: file_db.py,v 1.3 2010-02-08 20:00:14 wirawan Exp $
 #
 # wpylib.db.filedb module
 # Created: 20100205
@@ -15,7 +15,7 @@ import time
 try:
   import sqlite3
 except:
-  import pysqlite2 as sqlite3
+  import pysqlite2.dbapi2 as sqlite3
 
 class file_rec(tuple):
   pass
@@ -35,6 +35,8 @@ class file_table(object):
     int: 'INTEGER',
     float: 'REAL',
   }
+
+  indexable_row_type = sqlite3.Row
 
   def __init__(self, src_name, table_name='filedb', extra_fields=[]):
     self.src_name = src_name
@@ -149,7 +151,15 @@ class file_table(object):
 
   def __setitem__(self, filename, newdata):
     """Updates the metadata on the filename. Any other field than the filename
-    can be updated. The filename serves as a unique key here."""
+    can be updated. The filename serves as a unique key here.
+    The newdata can be a hash, like this:
+
+       A_file_table[filename] = {'date': 20041201, 'time': 122144}
+
+    or a list of tuples:
+
+       A_file_table[filename] = [('date': 20041201), ('time': 122144)]
+    """
     if isinstance(newdata, dict) or "keys" in dir(newdata):
       dnames = newdata.keys()
       dvals = [ newdata[k] for k in dnames ]
@@ -176,6 +186,13 @@ class file_table(object):
   def fields(self):
     """Returns the field names of the table of the latest query."""
     return [ z[0] for z in self.dbc.description ]
+
+  def row_kind(self, kind=None):
+    if kind:
+      self.db.row_factory = kind
+      # We will reload the cursor to account for the new factory
+      self.dbc = self.db.cursor()
+    return self.db.row_factory
 
 
 def md5_digest_file(filename):
