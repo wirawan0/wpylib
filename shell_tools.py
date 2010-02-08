@@ -1,4 +1,4 @@
-# $Id: shell_tools.py,v 1.4 2010-01-20 21:27:41 wirawan Exp $
+# $Id: shell_tools.py,v 1.5 2010-02-08 19:57:35 wirawan Exp $
 #
 # wpylib.shell_tools
 # Created: 20100106
@@ -8,6 +8,7 @@
 # scripts.
 #
 
+import glob
 import os
 import os.path
 import sys
@@ -26,13 +27,48 @@ def mcd(subdir):
   os.chdir(subdir)
 
 
-def provide_file(dest, src):
+def provide_link(dest, src):
   """Checks if file `dest' exists. If it does not, provide for it by means
   of a softlink from `src'."""
   if not os.path.exists(dest):
     # strip trailing /'s just in case it exists
     os.symlink(src, dest.rstrip("/"))
 
+
+# Globbing utilities:
+
+def sorted_glob(pathname):#, cmp=None, key=None, reverse=None):
+  """Returns a sorted list of file names matching glob pattern `pathname'.
+  Added here to accomodate older python that do not have sorted() function."""
+  rslt = glob.glob(pathname)
+  rslt.sort() #cmp=cmp, key=key, reverse=reverse)
+  return rslt
+
+# Environment variable utilities:
+
+def env_push(name, new_value):
+  """Temporarily modifies the value of an environment variable; saving the
+  original one in the function return value.
+  The original value can be restored to the environment variable by calling
+  env_pop.
+
+  Example:
+
+      oldpath = push_env('TOOL_HELPER', '/usr/bin/less')
+      execvp(os.P_WAIT, 'some_tool', ('some_tool', 'some_arg'))
+      pop_env('TOOL_HELPER', oldpath)
+  """
+  old_value = os.environ.get(name, None)
+  os.environ[name] = new_value
+  return old_value
+
+def env_pop(name, old_value):
+  """Restores the original value of an environment variable that was modified
+  temporarily by env_push."""
+  if old_value == None:
+    del os.environ[name]
+  else:
+    os.environ[name] = old_value
 
 # Low-level utilities:
 
@@ -111,9 +147,38 @@ else:
 
 
 # coreutils
+
+coreutils = """
+base64 basename
+cat chcon chgrp chmod chown cksum comm cp csplit cut
+date dd df dir dircolors dirname du
+echo env expand expr
+factor false fmt fold
+groups
+head hostid
+id install
+join
+link
+ln logname ls
+md5sum mkdir mkfifo mknod mv
+nice nl nohup
+od
+paste pathchk pinky pr printenv printf ptx pwd
+readlink rm rmdir runcon
+seq sha1sum sha224sum sha256sum sha384sum sha512sum shred shuf sleep sort split stat stty sum sync
+tac tail tee test touch touch tr true tsort tty
+uname unexpand uniq unlink users
+vdir
+wc who whoami
+yes
+""".split()
+
 # and other common utilities
 
-CMD = ['cat', 'cp', 'head', 'grep', 'less', 'ls', 'mkdir', 'mv', 'rm', 'tail']
+CMD = coreutils
+CMD += [ 'grep', 'less' ]
+CMD += [ 'sh', 'bash' ]
+CMD += [ 'gawk', 'sed', ]
 CMD_NAME = {}
 for n in CMD:
   CMD_NAME[n] = n
