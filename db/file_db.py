@@ -1,4 +1,4 @@
-# $Id: file_db.py,v 1.1 2010-02-06 23:21:09 wirawan Exp $
+# $Id: file_db.py,v 1.2 2010-02-08 01:46:12 wirawan Exp $
 #
 # wpylib.db.filedb module
 # Created: 20100205
@@ -20,7 +20,7 @@ except:
 class file_rec(tuple):
   pass
 
-class file_db(object):
+class file_table(object):
   # dtype for numpy (if wanted)
   dtype = numpy.dtype([
                        ('filename', 'S256'),
@@ -39,12 +39,14 @@ class file_db(object):
   def __init__(self, src_name, table_name='filedb', extra_fields=[]):
     self.src_name = src_name
     self.table_name = table_name
-    if os.path.isfile(src_name):
+    if isinstance(src_name, str): # os.path.isfile(src_name):
       self.db = sqlite3.connect(src_name)
+      self.dbc = self.db.cursor()
+    elif isinstance(src_name, sqlite3.Connection):
+      self.db = src_name
       self.dbc = self.db.cursor()
     else:
-      self.db = sqlite3.connect(src_name)
-      self.dbc = self.db.cursor()
+      raise ValueError, "Invalid src_name data type"
     self.db.text_factory = str
     self.sql_params = {
         'table_name': table_name,
@@ -117,12 +119,12 @@ class file_db(object):
       # Replaceable insert is not intended for tables with duplicate entries
       # of the same filename.
       insert_sql = "UPDATE '%(table_name)s' SET " \
-        + ', '.join(["'%s' = ?" % dname for dname in dnames]) \
+        + ', '.join(["'%s' = ?" % d for d in dnames]) \
         + " WHERE filename = ?;"
       vals = tuple(dvals + [filename])
     else:
       insert_sql = "INSERT INTO '%(table_name)s' (filename, " \
-        + ", ".join(["'%s'" % dname for dname in dnames]) \
+        + ", ".join(["'%s'" % d for d in dnames]) \
         + ") VALUES (?" + ',?'*(len(fields)) + ");"
       vals = tuple([filename] + dvals)
     self.exec_sql(insert_sql, vals)
@@ -145,6 +147,22 @@ class file_db(object):
       sql_stmt = "SELECT * FROM '%(table_name)s' WHERE filename = ?;"
     return [ rslt for rslt in self.exec_sql(sql_stmt, (filename,)) ]
 
+  def __setitem__(self, filename, newdata):
+    """Updates the metadata on the filename. Any other field than the filename
+    can be updated. The filename serves as a unique key here."""
+    if isinstance(newdata, dict) or "keys" in dir(newdata):
+      dnames = newdata.keys()
+      dvals = [ newdata[k] for k in dnames ]
+    else:
+      # Assuming an iterable with ('field', 'value') tuples.
+      dnames = [ dname for (dname,dval) in newdata ]
+      dvals = [ dval for (dname,dval) in newdata ]
+    update_sql = "UPDATE '%(table_name)s' SET " \
+      + ', '.join(["'%s' = ?" % d for d in dnames]) \
+      + " WHERE filename = ?;"
+    vals = tuple(dvals + [filename])
+    self.exec_sql(update_sql, vals)
+
   def __contains__(self, filename):
     """Counts the number of record entries matching in the `filename' field."""
     if filename.find("%") >= 0:
@@ -154,6 +172,10 @@ class file_db(object):
     return [ rslt for rslt in self.exec_sql(sql_stmt, (filename,)) ][0][0]
 
   count = __contains__
+
+  def fields(self):
+    """Returns the field names of the table of the latest query."""
+    return [ z[0] for z in self.dbc.description ]
 
 
 def md5_digest_file(filename):
@@ -174,13 +196,16 @@ def str2hexstr(md5sum):
   return "".join([ "%02x" % ord(c) for c in md5sum ])
 
 
-def get_file_stats(filename):
+def get_file_stats(filename, get_md5sum=True):
   stats = os.stat(filename)
   mtime = time.localtime(stats.st_mtime)
   Mdate = mtime.tm_year * 10000 + mtime.tm_mon * 100 + mtime.tm_mday
   Mtime = mtime.tm_hour * 10000 + mtime.tm_min * 100 + mtime.tm_sec
   size = stats.st_size
-  md5sum = str2hexstr(md5_digest_file(filename))  # this step is EXPEN$IVE
+  if get_md5sum:
+    md5sum = str2hexstr(md5_digest_file(filename))  # this step is EXPEN$IVE
+  else:
+    md5sum = None
   return {
     'filename': filename,
     'mdate': Mdate,
