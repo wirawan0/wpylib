@@ -1,4 +1,4 @@
-# $Id: shell_tools.py,v 1.5 2010-02-08 19:57:35 wirawan Exp $
+# $Id: shell_tools.py,v 1.6 2010-02-19 18:40:19 wirawan Exp $
 #
 # wpylib.shell_tools
 # Created: 20100106
@@ -183,14 +183,28 @@ CMD_NAME = {}
 for n in CMD:
   CMD_NAME[n] = n
   s = """def %(cmd)s(*args): run(CMD_NAME['%(cmd)s'], args)"""
-  exec(s % {'cmd': n })
+  exec s % {'cmd': n }
 
 def import_commands(namespace, cmds=None):
+  """Safely import shell commands to a given namespace.
+  We should avoid importing names that belong to built-in functions,
+  therefore we added that check below."""
   if cmds == None: cmds = CMD
-  thismod = globals()
+  #print namespace.keys()
+  #print namespace["__builtins__"]
+  my_namespace = globals()
+  dir = my_namespace['__builtins__']['dir']
+  #print dir(namespace["__builtins__"])
+  # Never clobber the built-in names:
+  try:
+    exclusions = dir(namespace["__builtins__"])
+  except:
+    exclusions = []
+
   for n in cmds:
-    n_act = thismod[n]
-    namespace.setdefault(n, n_act)
+    if n not in exclusions:
+      n_act = my_namespace[n]
+      namespace.setdefault(n, n_act)
 
 """
 def cp(*args):
