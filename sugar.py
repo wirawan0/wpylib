@@ -1,6 +1,6 @@
 #!/usr/bin/ipython -pylab
 #
-# $Id: sugar.py,v 1.2 2010-02-08 19:58:44 wirawan Exp $
+# $Id: sugar.py,v 1.3 2010-02-19 18:42:15 wirawan Exp $
 #
 # Created: 20100121
 # Wirawan Purwanto
@@ -51,4 +51,15 @@ def dict_slice(Dict, *keys):
   then dict_slice(d, 'abc', 'ghi') will yield {'abc': 12, 'ghi': 32 }
   """
   return dict([ (k, Dict[k]) for k in keys ])
+
+def dict_join(*dicts):
+  """Join multiple dicts into one, updating duplicate keys from left-to-right
+  manner.
+  Thus the key from the rightmost dict will take precedence."""
+
+  rslt = {}
+  for d in dicts:
+    rslt.update(d)
+  return rslt
+
 
