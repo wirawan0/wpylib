@@ -1,4 +1,4 @@
-# $Id: fortbin.py,v 1.1 2010-02-08 21:49:54 wirawan Exp $
+# $Id: fortbin.py,v 1.2 2010-02-19 18:39:17 wirawan Exp $
 #
 # wpylib.iofmt.fortbin module
 # Created: 20100208
@@ -15,28 +15,40 @@ import sys
 from wpylib.sugar import ifelse
 
 class fortran_bin_file(object):
-  """A tool for reading Fortran binary files."""
-  def __init__(self, filename=None):
-    self.record_marker_type = numpy.uint32
-    self.debug = 100
-    if filename:
-      self.open(filename)
+  """A tool for reading Fortran binary files.
 
-  def open(self, filename):
-    self.F = open(filename, "rb")
+  Caveat: On 64-bit systems, typical Fortran implementations still have int==int32
+  (i.e. the LP64 programming model), unless "-i8" kind of option is enabled.
+  To use 64-bit default integer, set the default_int attribute to numpy.int64 .
+  """
+  record_marker_type = numpy.uint32
+  default_int = numpy.int32
+  default_float = numpy.float64
+  default_str = numpy.str_
+
+  def __init__(self, filename=None, mode="r"):
+    self.debug = 0
+    if filename:
+      self.open(filename, mode)
+
+  def open(self, filename, mode="r"):
+    self.F = open(filename, mode+"b")
 
   def read(self, *fields, **opts):
     """Reads a Fortran record.
     The description of the fields are given as
     (name, dtype, length) tuples."""
     from numpy import fromfile as rd
-    if self.debug:
+    if self.debug or opts.get("debug"):
       dbg = lambda msg : sys.stderr.write(msg)
     else:
       dbg = lambda msg : None
     def fld_count(f):
       if len(f) > 2:
-        return f[2]
+        if isinstance(f[2], (list,tuple)):
+          return numpy.product(f[2])
+        else:
+          return f[2]
       else:
         return 1
 
@@ -52,6 +64,8 @@ class fortran_bin_file(object):
 
     if "out" in opts:
       rslt = opts["out"]
+    elif "dest" in opts:
+      rslt = opts["dest"]
     else:
       rslt = {}
 
@@ -67,7 +81,14 @@ class fortran_bin_file(object):
       if len(f) > 2:
         (name,Dtyp,Len) = f
         dtyp = numpy.dtype(Dtyp)
-        setval(rslt, name, numpy.fromfile(self.F, dtyp, Len))
+        Len2 = fld_count(f)
+        if isinstance(f[2], list) or isinstance(f[2], tuple):
+          # Special handling for shaped arrays
+          arr = numpy.fromfile(self.F, dtyp, Len2)
+          setval(rslt, name, arr.reshape(tuple(Len), order='F'))
+        else:
+          setval(rslt, name, numpy.fromfile(self.F, dtyp, Len2))
+
       else:
         # Special handling for scalars
         name = f[0]
@@ -86,4 +107,113 @@ class fortran_bin_file(object):
         % (reclen2, reclen)
 
     return rslt
+
+  def writevals(self, *vals, **opts):
+    """Writes a Fortran record.
+    Only values need to be given, because the types are known.
+    This is a direct converse of read subroutine."""
+    if self.debug:
+      dbg = lambda msg : sys.stderr.write(msg)
+    else:
+      dbg = lambda msg : None
+
+    vals0 = vals
+    vals = []
+    for v in vals0:
+      if isinstance(v, int):
+        v2 = self.default_int(v)
+        if v2 != v:
+          raise OverflowError, \
+            "Integer too large to represent by default int: %d" % v
+        vals.append(v2)
+      elif isinstance(v, float):
+        v2 = self.default_float(v)
+        # FIXME: check for overflow error like in integer conversion above
+        vals.append(v2)
+      elif isinstance(v, str):
+        v2 = self.default_str(v)
+        vals.append(v2)
+      elif "itemsize" in dir(v):
+        vals.append(v)
+      else:
+        raise NotImplementedError, \
+          "Unsupported object of type %s of value %s" \
+          (str(type(v)), str(v))
+
+    reclen = numpy.sum([ v.size * v.itemsize for v in vals ], \
+                       dtype=self.record_marker_type)
+
+    dbg("Record length = %d\n" % reclen)
+    dbg("Item count = %d\n" % len(vals))
+    reclen.tofile(self.F)
+
+    for v in vals:
+      if isinstance(v, numpy.ndarray):
+        # Always store in "Fortran" format, i.e. column major
+        # Since tofile() always write in the row major format,
+        # we will transpose it before writing:
+        v.T.tofile(self.F)
+      else:
+        v.tofile(self.F)
+
+    reclen.tofile(self.F)
+
+
+  def writefields(self, src, *fields, **opts):
+    if (issubclass(src.__class__, dict) and issubclass(dict, src.__class__)) \
+       or "__getitem__" in dir(src):
+      def getval(d, k):
+        return d[k]
+    else:
+      # Assume we can use getattr method:
+      getval = getattr
+
+    vals = []
+    for f in fields:
+      if isinstance(f, str):
+        vals.append(getval(src, f))
+      elif isinstance(f, (list, tuple)):
+        v = getval(src, f[0])
+        # FIXME: check datatype and do necessary conversion if f[1] exists
+        # Exception: if a string spec is found, we will retrofit the string
+        # to that kind of object. Strings that are too long are silently
+        # truncated and those that are too short will have whitespaces
+        # (ASCII 32) appended.
+        if len(f) > 1:
+          dtyp = numpy.dtype(f[1])
+          if dtyp.char == 'S':
+            strlen = dtyp.itemsize
+            v = self.default_str("%-*s" % (strlen, v[:strlen]))
+        # FIXME: check dimensionality if f[2] exists
+        vals.append(v)
+      else:
+        raise ValueError, "Invalid field type: %s" % str(type(f))
+
+def array_major_dim(arr):
+  """Tests whether a numpy array is column or row major.
+  It will return the following:
+    -1 : row major
+    +1 : column major
+    0  : unknown (e.g. no indication one way or the other)
+  In the case of inconsistent order, we will raise an exception."""
+  if len(arr.shape) <= 1:
+    return 0
+  elif arr.flags['C_CONTIGUOUS']:
+    return -1
+  elif arr.flags['F_CONTIGUOUS']:
+    return +1
+  # In case of noncontiguous array, we will have to test it
+  # based on the strides
+  else:
+    Lstrides = numpy.array(arr.shape[:-1])
+    Rstrides = numpy.array(arr.shape[1:])
+    if numpy.all(Lstrides >= Rstrides):
+      # Categorizes equal consecutive strides to "row major" as well
+      return -1
+    elif numpy.all(Lstrides <= Rstrides):
+      return +1
+    else:
+      raise RuntimeError, \
+        "Unable to determine whether this is a row or column major object."
+
 
