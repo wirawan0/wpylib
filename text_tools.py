@@ -1,4 +1,4 @@
-# $Id: text_tools.py,v 1.2 2010-01-22 18:50:09 wirawan Exp $
+# $Id: text_tools.py,v 1.3 2010-02-24 14:28:13 wirawan Exp $
 #
 # wpylib.text_tools
 # Created: 20091204
@@ -8,6 +8,7 @@
 #
 
 import numpy
+from wpylib.sugar import ifelse
 
 def make_matrix(Str, debug=None):
   """Simple tool to convert a string like
@@ -102,5 +103,12 @@ def str_expand(template, params, maxiter=100):
   if str1 != str2: raise RuntimeError, "Iteration limit exceeded"
   return str1
 
+
+def slice_str(s):
+  return "%s:%s:%s" % (
+    ifelse(s.start == None, "", str(s.start)),
+    ifelse(s.stop == None, "", str(s.stop)),
+    ifelse(s.step == None, "", str(s.step)),
+  )
 
 
