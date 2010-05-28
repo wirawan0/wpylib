@@ -1,4 +1,4 @@
-# $Id: text_tools.py,v 1.3 2010-02-24 14:28:13 wirawan Exp $
+# $Id: text_tools.py,v 1.4 2010-05-28 18:46:53 wirawan Exp $
 #
 # wpylib.text_tools
 # Created: 20091204
@@ -102,6 +102,13 @@ def str_expand(template, params, maxiter=100):
 
   if str1 != str2: raise RuntimeError, "Iteration limit exceeded"
   return str1
+
+
+def str_grep(S, strs):
+  return [s for s in strs if s.find(S) >= 0]
+
+def str_igrep(S, strs):
+  return [i for (s,i) in zip(strs,xrange(len(strs))) if s.find(S) >= 0]
 
 
 def slice_str(s):
