@@ -1,4 +1,4 @@
-# $Id: shell_tools.py,v 1.6 2010-02-19 18:40:19 wirawan Exp $
+# $Id: shell_tools.py,v 1.7 2010-05-28 18:45:51 wirawan Exp $
 #
 # wpylib.shell_tools
 # Created: 20100106
@@ -70,6 +70,21 @@ def env_pop(name, old_value):
   else:
     os.environ[name] = old_value
 
+def getenv(*names, **opts):
+  """Tries to get a value from a list of environment variables.
+  The first found one will be used; if none is found, then a default will
+  be tried (use `default' parameter to specify this).
+  If no default is found, then a KeyError exception will be raised.
+  """
+  for n in names:
+    if n in os.environ:
+      return os.environ[n]
+  if "default" in opts:
+    return opts["default"]
+  else:
+    raise KeyError, \
+      "Cannot find value among environment variables: %s" % (str(names))
+
 # Low-level utilities:
 
 def errchk(cmd, args, retcode):
@@ -101,11 +116,27 @@ def quote_cmdline(seq):
     rslt.append(inew)
   return " ".join(rslt)
 
+
+"""
+pipe_out and pipe_in defines unidirectional pipes for external programs.
+Note the unconventional meaning: `pipe_in' means we drive the program with
+python input as the stdin, `pipe_out' means we run the program and read in
+the output into python.
+"""
+
+
 if has_subprocess:
 
   def run(prg, args):
     retcode = subprocess.call((prg,) + tuple(args))
     errchk(prg, args, retcode)
+    return 0
+
+  def system(cmdline):
+    """Similar to os.system(), except that errors are caught.
+    cmdline *must* be a string."""
+    retcode = subprocess.call(cmdline, shell=True)
+    errchk(cmdline, (), retcode)
     return 0
 
   def pipe_out(args, split=False, shell=False):
@@ -119,12 +150,33 @@ if has_subprocess:
     else:
       return retval.splitlines()
 
+  class pipe_in:
+    """Executes a shell command, piping in the stdin from python for driving.
+    This is the reverse of pipe_out.
+    Commands are given through file-like write() or writelines() methods."""
+    def __init__(self, args, shell=False):
+      self.px = subprocess.Popen(args, stdin=subprocess.PIPE, shell=shell)
+      self.args = args
+    def write(self, line):
+      self.px.stdin.write(line)
+    def writelines(self, lines):
+      for line in lines:
+        self.write(line)
+    def close(self):
+      self.px.stdin.close()
+
 else:
 
   def run(prg, args=()):
     # Python < 2.4 does not have subprocess, so we use spawnvp
     retcode = os.spawnvp(os.P_WAIT, prg, (prg,) + tuple(args))
     errchk(prg, args, retcode)
+    return 0
+
+  def system(cmdline):
+    """Similar to os.system(), except that errors are caught."""
+    retcode = os.system(cmdline)
+    errchk(cmdline, (), retcode)
     return 0
 
   def pipe_out(args, split=False, shell=False):
@@ -144,6 +196,18 @@ else:
       return retval
     else:
       return retval.splitlines()
+
+  def pipe_in(args, shell=False):
+    """Executes a shell command, piping in the stdin from python for driving.
+    This is the reverse of pipe_out.
+    Commands are given through file-like write() or writelines() methods."""
+    if shell or isinstance(args, str):
+      # BEWARE: args should be a string in this case
+      p = os.popen(args, "w")
+    else:
+      args = quote_cmdline(args)
+      p = os.popen(args, "w")
+      return p
 
 
 # coreutils
