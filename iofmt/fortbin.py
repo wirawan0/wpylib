@@ -1,4 +1,4 @@
-# $Id: fortbin.py,v 1.2 2010-02-19 18:39:17 wirawan Exp $
+# $Id: fortbin.py,v 1.3 2010-05-28 18:43:14 wirawan Exp $
 #
 # wpylib.iofmt.fortbin module
 # Created: 20100208
@@ -15,7 +15,7 @@ import sys
 from wpylib.sugar import ifelse
 
 class fortran_bin_file(object):
-  """A tool for reading Fortran binary files.
+  """A tool for reading and writing Fortran binary files.
 
   Caveat: On 64-bit systems, typical Fortran implementations still have int==int32
   (i.e. the LP64 programming model), unless "-i8" kind of option is enabled.
@@ -34,10 +34,18 @@ class fortran_bin_file(object):
   def open(self, filename, mode="r"):
     self.F = open(filename, mode+"b")
 
+  def close(self):
+    if getattr(self, "F", None):
+      self.F.close()
+      self.F = None
+
   def read(self, *fields, **opts):
     """Reads a Fortran record.
     The description of the fields are given as
-    (name, dtype, length) tuples."""
+    either (name, dtype) or (name, dtype, length) tuples.
+    If length is not specified, then a scalar value is read.
+    Length is a scalar for 1-D array, or a tuple or list for multidimensional
+    array."""
     from numpy import fromfile as rd
     if self.debug or opts.get("debug"):
       dbg = lambda msg : sys.stderr.write(msg)
@@ -62,9 +70,7 @@ class fortran_bin_file(object):
         "Attempting to read %d bytes from a record of length %d bytes" \
         % (expected_len, reclen)
 
-    if "out" in opts:
-      rslt = opts["out"]
-    elif "dest" in opts:
+    if "dest" in opts:
       rslt = opts["dest"]
     else:
       rslt = {}
@@ -108,7 +114,7 @@ class fortran_bin_file(object):
 
     return rslt
 
-  def writevals(self, *vals, **opts):
+  def write_vals(self, *vals, **opts):
     """Writes a Fortran record.
     Only values need to be given, because the types are known.
     This is a direct converse of read subroutine."""
@@ -159,7 +165,7 @@ class fortran_bin_file(object):
     reclen.tofile(self.F)
 
 
-  def writefields(self, src, *fields, **opts):
+  def write_fields(self, src, *fields, **opts):
     if (issubclass(src.__class__, dict) and issubclass(dict, src.__class__)) \
        or "__getitem__" in dir(src):
       def getval(d, k):
@@ -188,6 +194,9 @@ class fortran_bin_file(object):
         vals.append(v)
       else:
         raise ValueError, "Invalid field type: %s" % str(type(f))
+
+    self.write_vals(*vals, **opts)
+
 
 def array_major_dim(arr):
   """Tests whether a numpy array is column or row major.
