@@ -1,6 +1,6 @@
-# $Id: file_db.py,v 1.3 2010-02-08 20:00:14 wirawan Exp $
+# $Id: file_db.py,v 1.4 2010-05-28 18:46:16 wirawan Exp $
 #
-# wpylib.db.filedb module
+# wpylib.db.file_db module
 # Created: 20100205
 # Wirawan Purwanto
 #
@@ -16,6 +16,8 @@ try:
   import sqlite3
 except:
   import pysqlite2.dbapi2 as sqlite3
+
+default_debug_level = 0
 
 class file_rec(tuple):
   pass
@@ -53,7 +55,7 @@ class file_table(object):
     self.sql_params = {
         'table_name': table_name,
     }
-    self.debug = 1
+    self.debug = default_debug_level
 
     create_sql = """\
       CREATE TABLE IF NOT EXISTS '%(table_name)s' (
