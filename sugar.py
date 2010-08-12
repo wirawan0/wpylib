@@ -1,6 +1,6 @@
 #!/usr/bin/ipython -pylab
 #
-# $Id: sugar.py,v 1.4 2010-05-28 18:47:56 wirawan Exp $
+# $Id: sugar.py,v 1.5 2010-08-12 19:35:55 wirawan Exp $
 #
 # Created: 20100121
 # Wirawan Purwanto
@@ -55,12 +55,58 @@ def dict_slice(Dict, *keys):
 def dict_join(*dicts):
   """Join multiple dicts into one, updating duplicate keys from left-to-right
   manner.
-  Thus the key from the rightmost dict will take precedence."""
+  Thus the items from the rightmost dict will take precedence."""
 
   rslt = {}
   for d in dicts:
     rslt.update(d)
   return rslt
+
+def list_join(*L):
+  r = []
+  for i in L:
+    r += i
+  return r
+
+
+class ranges_type:
+  """This class is to provide dirty magic to specify piecewice slices
+  of one-dimensional ranges.
+  To this end, use the `ranges' instance already defined in this module.
+  Example:
+
+     >>> ranges[1]
+     [1]
+
+     >>> ranges[1, 4, 7, 9]
+     [1]
+
+     >>> ranges[1:7, 9:11]
+     [1, 2, 3, 4, 5, 6, 9, 10]
+
+     >>> rr[1,4,7,9,[2,3,2]]      # it even works like this!
+     [1, 4, 7, 9, 2, 3, 2]
+
+  The key is, anything 1-D will be flattened out. So be careful.
+  Slices must have defined starting and ending points.
+  Undefined step will be reinterpreted as unit step.
+  As always: endpoints are not included when using the slicing syntax.
+  """
+  def expand_range(self, rr):
+    pass
+  def __getitem__(self, rr):
+    if "__iter__" in dir(rr):
+      return list_join(*[ self[r] for r in rr ])
+    elif isinstance(rr, slice):
+      if rr.step == None:
+        step = 1
+      else:
+        step = rr.step
+      return range(rr.start, rr.stop, step)
+    else:
+      return [rr]
+
+ranges = ranges_type()
 
 
 class Parameters(object):
