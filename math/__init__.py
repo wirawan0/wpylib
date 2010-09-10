@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2010-05-28 18:43:59 wirawan Exp $
+# $Id: __init__.py,v 1.3 2010-09-10 21:23:59 wirawan Exp $
 #
 # wpylib.math main module
 # Created: 20091204
@@ -28,3 +28,17 @@ def ztol(val, tol=None, copy=True):
   else:
     raise ValueError, "Unsupported datatype: %s" % str(type(val))
 
+
+def epsilon(dtype):
+  """A simple way to determine (at runtime) the precision of a given type
+  real number.
+  Precision is defined such that (1.0 + epsilon(dtype) > 1.0).
+  Below this number, the addition will not yield a different result.
+  """
+  one = dtype(1.0)
+  small = one
+  small2 = small
+  while one + small > one:
+    small2 = small
+    small = dtype(small / 2)
+  return small2
