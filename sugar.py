@@ -1,6 +1,6 @@
 #!/usr/bin/ipython -pylab
 #
-# $Id: sugar.py,v 1.6 2010-09-10 21:24:56 wirawan Exp $
+# $Id: sugar.py,v 1.7 2010-09-27 19:40:40 wirawan Exp $
 #
 # Created: 20100121
 # Wirawan Purwanto
@@ -227,11 +227,12 @@ class Parameters(dict):
         del self.__dict__[badkw]
     # Store the user-defined overrides in its own container:
     dict.clear(self)
-    dict.update(self, _opts_)
     if _opts_.get('_flatten_', False):
-      for p in paramlist:
+      for p in _override_dicts_:
         dict.update(self, p)
+      dict.update(self, _opts_)
     else:
+      dict.update(self, _opts_)
       # WARNING: Using weakref proxy is important:
       # - to allow clean deletion of Parameters() objects when not needed
       # - to avoid recursive 'in' and 'get[]' operators.
