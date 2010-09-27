@@ -1,4 +1,4 @@
-# $Id: text_tools.py,v 1.4 2010-05-28 18:46:53 wirawan Exp $
+# $Id: text_tools.py,v 1.5 2010-09-27 19:54:26 wirawan Exp $
 #
 # wpylib.text_tools
 # Created: 20091204
@@ -105,9 +105,12 @@ def str_expand(template, params, maxiter=100):
 
 
 def str_grep(S, strs):
+  """Returns a list of strings wherein the substring S is found."""
   return [s for s in strs if s.find(S) >= 0]
 
 def str_igrep(S, strs):
+  """Returns a list of the indices of the strings wherein the substring S
+  is found."""
   return [i for (s,i) in zip(strs,xrange(len(strs))) if s.find(S) >= 0]
 
 
