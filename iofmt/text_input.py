@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id: text_input.py,v 1.1 2010-09-27 19:54:05 wirawan Exp $
+# $Id: text_input.py,v 1.2 2010-09-30 17:23:34 wirawan Exp $
 #
 # wpylib.iofmt.text_input module
 # Quick-n-dirty text input utilities
@@ -146,6 +146,13 @@ class text_input(object):
     If the tuple contains the third field, it is used as the name of the field;
     otherwise the fields are named f0, f1, f2, ....
 
+    Complex data (floating-point only) must be specified as a tuple of two columns
+    containing the real and imaginary data, like this:
+       ((2, 3), complex, 'ampl')
+    or
+       ((7, 9), complex)     # fine to interleave column with something else
+
+
     Additional keyword options:
     * deftype: default datatype
     * maxcount: maximum number of records to be read
@@ -154,26 +161,50 @@ class text_input(object):
     """
     deftype = kwd.get("deftype", float)
 
-    # float_fields extracts the desired columns and converts them to floats
-    flds = []
-    cols = []
+    class register_item_t:
+      flds = []
+      cols = []
+      complex_types = (complex, numpy.complexfloating)
+      def add(self, col, fldname, type):
+        dtype = numpy.dtype(type)
+        t = dtype.type
+        dsamp = t() # create a sample
+        # Special handling for complex:
+        # -- unfortunately this detection fails because even real
+        # numbers have its 'imag' attribute:
+        #dattrs = dir(dsamp)
+        #if "imag" in dattrs and "real" in dattrs:
+        if isinstance(dsamp, numpy.complexfloating):
+          dtype_elem = dsamp.real.dtype
+          t_elem = dtype_elem.type
+          conv_func = lambda v, c: t(t_elem(v[c[0]]) + 1j*t_elem(v[c[1]]))
+          self.cols.append((conv_func, col))
+          self.flds.append((fldname, dtype))
+        else:
+          # other datatypes: much easier
+          # Simply get the string, and use numpy to convert to the datatype
+          # on-the-fly
+          conv_func = lambda v, c: t(v[c])
+          self.cols.append((conv_func, col))
+          self.flds.append((fldname, dtype))
+    reg = register_item_t()
+
     for (i,c) in zip(xrange(len(col_desc)), col_desc):
       if type(c) == int:
-        cols.append(c)
-        flds.append(('f' + str(i), deftype))
+        reg.add(c, 'f' + str(i), deftype)
       elif len(c) == 1:
-        cols.append(c[0])
-        flds.append(('f' + str(i), deftype))
+        reg.add(c[0], 'f' + str(i), deftype)
       elif len(c) == 2:
-        cols.append(c[0])
-        flds.append(('f' + str(i), c[1]))
+        reg.add(c[0], 'f' + str(i), c[1])
       elif len(c) == 3:
-        cols.append(c[0])
-        flds.append((c[2], c[1]))
+        reg.add(c[0], c[2], c[1])
+      else:
+        raise ValueError, \
+          "Invalid column specification: %s" % (c,)
 
-    #print cols
-    #print flds
-    get_fields = lambda vals : tuple([ vals[col] for col in cols ])
+    cols = reg.cols
+    flds = reg.flds
+    get_fields = lambda vals : tuple([ filt(vals,col) for (filt,col) in cols ])
     if "maxcount" in kwd:
       #print "hello"
       rslt = [ get_fields(vals.split()) for (c,vals) in zip(xrange(kwd['maxcount']),self) ]
