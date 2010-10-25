@@ -1,4 +1,4 @@
-# $Id: shell_tools.py,v 1.7 2010-05-28 18:45:51 wirawan Exp $
+# $Id: shell_tools.py,v 1.8 2010-10-25 14:41:39 wirawan Exp $
 #
 # wpylib.shell_tools
 # Created: 20100106
@@ -162,6 +162,8 @@ if has_subprocess:
     def writelines(self, lines):
       for line in lines:
         self.write(line)
+    def flush(self):
+      self.px.stdin.flush()
     def close(self):
       self.px.stdin.close()
 
