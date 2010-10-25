@@ -1,6 +1,6 @@
 #!/usr/bin/ipython -pylab
 #
-# $Id: sugar.py,v 1.7 2010-09-27 19:40:40 wirawan Exp $
+# $Id: sugar.py,v 1.8 2010-10-25 14:42:50 wirawan Exp $
 #
 # Created: 20100121
 # Wirawan Purwanto
@@ -80,7 +80,7 @@ class ranges_type:
      [1]
 
      >>> ranges[1, 4, 7, 9]
-     [1]
+     [1, 4, 7, 9]
 
      >>> ranges[1:7, 9:11]
      [1, 2, 3, 4, 5, 6, 9, 10]
@@ -90,7 +90,7 @@ class ranges_type:
 
   The key is, anything 1-D will be flattened out. So be careful.
   Slices must have defined starting and ending points.
-  Undefined step will be reinterpreted as unit step.
+  Undefined step will be reinterpreted as unit incremental step.
   As always: endpoints are not included when using the slicing syntax.
   """
   def expand_range(self, rr):
