@@ -1,4 +1,4 @@
-# $Id: fitting.py,v 1.2 2010-05-28 18:43:39 wirawan Exp $
+# $Id: fitting.py,v 1.3 2010-11-05 02:28:20 wirawan Exp $
 #
 # wpylib.math.fitting module
 # Created: 20100120
@@ -117,9 +117,12 @@ class Poly_order4(Poly_base):
                  for i in xrange(len(x)) ])
 
 
+class fit_result(dict):
+  pass
 
 def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
              debug=10,
+             outfmt=1,
              method='leastsq', opts={}):
   """
   Performs a function fitting.
@@ -137,6 +140,9 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     size of y data below.
     For a 2-D fitting, for example, x should be a column array.
 
+  The "y" array is a 1-D array of length M, which contain the "measured"
+  value of the function at every domain point given in "x".
+
   Inspect Poly_base, Poly_order2, and other similar function classes in this
   module to see the example of the Funct function.
 
@@ -146,23 +152,40 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     (multidimensional) coordinate of the Funct's domain.
     y is a one-dimensional dataset.
     Or,
-  * via Data argument (which is a multi-column dataset
+  * via Data argument (which is a multi-column dataset, where the first row
+    is the "y" argument).
 
   """
   global last_fit_rslt, last_chi_sqr
-  from scipy.optimize import leastsq, anneal
+  from scipy.optimize import fmin, leastsq, anneal
   # We want to minimize this error:
   if Data != None: # an alternative way to specifying x and y
     y = Data[0]
     x = Data[1:] # possibly multidimensional!
-  if hasattr(Funct, "Guess"):
+  if hasattr(Funct, "Guess_xy"):
     # Try to provide an initial guess
+    Guess = Funct.Guess_xy(x, y)
+  elif hasattr(Funct, "Guess"):
+    # Try to provide an initial guess
+    # This is an older version with y-only argument
     Guess = Funct.Guess(y)
   elif Guess == None: # VERY OLD, DO NOT USE ANYMORE!
     Guess = [ y.mean() ] + [0.0, 0.0] * len(x)
 
-  fun_err = lambda CC, xx, yy: abs(Funct(CC,xx) - yy)
-  fun_err2 = lambda CC, xx, yy: numpy.sum(abs(Funct(CC,xx) - yy)**2)
+  if debug < 20:
+    fun_err = lambda CC, xx, yy: abs(Funct(CC,xx) - yy)
+    fun_err2 = lambda CC, xx, yy: numpy.sum(abs(Funct(CC,xx) - yy)**2)
+  else:
+    def fun_err(CC, xx, yy):
+      ff = Funct(CC,xx)
+      r = abs(ff - yy)
+      print "  err: %s << %s << %s, %s" % (r, ff, CC, xx)
+      return r
+    def fun_err2(CC, xx, yy):
+      ff = Funct(CC,xx)
+      r = numpy.sum(abs(ff - yy)**2)
+      print "  err: %s << %s << %s, %s" % (r, ff, CC, xx)
+      return r
 
   if debug >= 5:
     print "Guess params:"
@@ -175,6 +198,15 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
                    full_output=1,
                    **opts
                    )
+    keys = ('xopt', 'cov_x', 'infodict', 'mesg', 'ier')
+  elif method == 'fmin':
+    rslt = fmin(fun_err2,
+                x0=Guess, # initial coefficient guess
+                args=(x,y), # data onto which the function is fitted
+                full_output=1,
+                **opts
+               )
+    keys = ('xopt', 'fopt', 'iter', 'funcalls', 'warnflag', 'allvecs')
   elif method == 'anneal':
     rslt = anneal(fun_err2,
                   x0=Guess, # initial coefficient guess
@@ -182,15 +214,25 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
                   full_output=1,
                   **opts
                  )
+    keys = ('xopt', 'fopt', 'T', 'funcalls', 'iter', 'accept', 'retval')
   else:
     raise ValueError, "Unsupported minimization method: %s" % method
+  chi_sqr = fun_err2(rslt[0], x, y)
+  last_chi_sqr = chi_sqr
   last_fit_rslt = rslt
-  last_chi_sqr = fun_err2(rslt[0], x, y)
   if (debug >= 10):
     #print "Fit-message: ", rslt[]
     print "Fit-result:"
     print "\n".join([ "%2d  %s" % (ii, rslt[ii]) for ii in xrange(len(rslt)) ])
-  print "params = ", rslt[0]
-  print "chi square = ", last_chi_sqr / len(y)
-  return rslt[0]
+  if debug >= 1:
+    print "params = ", rslt[0]
+    print "chi square = ", last_chi_sqr / len(y)
+  if outfmt == 1:
+    return rslt[0]
+  else:
+    rec = fit_result()
+    for (k, v) in zip(keys, rslt):
+      rec[k] = v
+    rec['chi_square'] = chi_sqr
+    return rec
 
