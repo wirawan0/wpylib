@@ -1,4 +1,4 @@
-# $Id: result_base.py,v 1.1 2010-11-11 17:48:01 wirawan Exp $
+# $Id: result_base.py,v 1.2 2010-11-11 17:59:36 wirawan Exp $
 #
 # pyqmc.results.result_base.py
 # Basic tool for storing the result of a calculation.
@@ -13,6 +13,13 @@ The class result_base is very similar to
 wpylib.params.params_flat.Parameters ,
 except that it does not contain multiple dict-like objects, thus is
 much simpler.
+
+class: result_base
+
+The result_base class concerns itself with loading structured set of
+values or parameters from external sources (e.g., from a text file or
+other binary file) in order to make the data amenable to machine
+processing.
 """
 
 import os
@@ -21,12 +28,17 @@ import os.path
 class result_base(dict):
   '''Structure to represent metadata or structured result.
   No particular structure is assumed.
-  Results are fetchable by either X.member or X['member'] syntax, and these
-  results are typically meant to be read-only.
+  Results are fetchable by either X.member or X['member'] syntax, and
+  these results are typically meant to be read-only.
 
   CAVEATS
   * Note: dict method names are left intact.
-    Please be aware when programming this thing!
+    Please be aware when programming using result_base object!
+  * Please do not prefix or suffix dataset member names with underscore.
+    Those names are reserved for internal purposes.
+  * In some cases, additional methods are required to be defined in the
+    derived class:
+    - parse_file_(self, filename)
   * Additional possible field names set by this class:
     - filename_
     - absfilename_ -- full file name including absolute directory path.
@@ -40,6 +52,12 @@ class result_base(dict):
 
   '''
   def __init__(self, _src_=None, **_extra_values_):
+    """Initializes structured dataset.
+    By default, the source can be one of the following:
+    * a dict: then the values are copied over (shallow copy) to this
+      object.
+    * a string containing filename: then the virtual parse_file_ method
+    """
     src = _src_
     if isinstance(src, dict):
       self.clear()
@@ -47,7 +65,7 @@ class result_base(dict):
     elif isinstance(src, str):
       # WARNING: Awaiting future definition of parse_text_file_().
       # This must be specified in the derived class.
-      self.parse_text_file_(src)
+      self.parse_file_(src)
       self.filename_ = src
       self.absfilename_ = os.path.abspath(src)
     else:
