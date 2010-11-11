@@ -1,6 +1,6 @@
 # -*- python -*-
 #
-# $Id: regexps.py,v 1.1 2010-10-06 16:37:42 wirawan Exp $
+# $Id: regexps.py,v 1.2 2010-11-11 18:00:01 wirawan Exp $
 #
 # Created: 20101006
 # Wirawan Purwanto
@@ -55,7 +55,8 @@ class regex(object):
   def __mod__(self, s):
     """Match the string to the regex at the any position.
     Too bad python does not have ~= like perl, so we use the
-    quirky % or == here."""
+    quirky % or == here.
+    And the regex object must be the LEFT operand!"""
     self.m = self.rx.search(s)
     return self.m
   __eq__ = __mod__
