@@ -1,6 +1,6 @@
 #!/usr/bin/ipython -pylab
 #
-# $Id: sugar.py,v 1.8 2010-10-25 14:42:50 wirawan Exp $
+# $Id: sugar.py,v 1.9 2011-03-10 20:16:58 wirawan Exp $
 #
 # Created: 20100121
 # Wirawan Purwanto
@@ -45,13 +45,27 @@ else:
 #print dir(globals())
 
 def dict_slice(Dict, *keys):
-  """Returns a shallow copy of the subset of a given dict (or an otherwise
-  hashable object) with a given set of keys.
+  """Returns a shallow copy of the subset of a given dict (or a dict-like
+  object) with a given set of keys.
+  The return object is a dict.
+  No keys may be missing from Dict.
 
   Example: if d = {'abc': 12, 'def': 7, 'ghi': 32, 'jkl': 98 }
   then dict_slice(d, 'abc', 'ghi') will yield {'abc': 12, 'ghi': 32 }
   """
   return dict([ (k, Dict[k]) for k in keys ])
+
+def dict_islice(Dict, *keys):
+  """Returns a shallow copy of the subset of a given dict (or an otherwise
+  hashable object) with a given set of keys.
+  The return object is a dict.
+  This is similar to dict_slice, except that missing keys in
+  Dict will be ignored.
+  """
+  # This is fancy but we require Dict to have keys() function:
+  #return dict([ (k, Dict[k]) for k in (set(keys) & set(Dict.keys())) ])
+  # use this one instead, which is milder requirement:
+  return dict([ (k, Dict[k]) for k in keys if (k in Dict) ])
 
 def dict_join(*dicts):
   """Join multiple dicts into one, updating duplicate keys from left-to-right
