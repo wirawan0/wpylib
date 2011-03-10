@@ -1,4 +1,4 @@
-# $Id: errorbar.py,v 1.2 2010-12-01 17:11:46 wirawan Exp $
+# $Id: errorbar.py,v 1.3 2011-03-10 20:17:55 wirawan Exp $
 #
 # Module wpylib.math.stats.errorbar
 # Errorbar text handling for Python
@@ -185,20 +185,20 @@ class errorbar(object):
   # Some algebraic operations with scalars are defined here:
   def __mul__(self, y):
     """Scales by a scalar value."""
-    return self.__class__(self.val*y, self.err*y, ebproc=self.ebproc)
+    return self.__class__(self.val*y, self.err*abs(y), ebproc=self.ebproc)
   __rmul__ = __mul__
   def __imul__(self, y):
     """Scales itself by a scalar value."""
     self.val *= y
-    self.err *= y
+    self.err *= abs(y)
     self.ebupdate()
   def __div__(self, y):
     """Divides by a scalar value."""
-    return self.__class__(self.val/y, self.err/y, ebproc=self.ebproc)
+    return self.__class__(self.val/y, self.err/abs(y), ebproc=self.ebproc)
   def __idiv__(self, y):
     """Scales itself by a scalar value (division)."""
     self.val /= y
-    self.err /= y
+    self.err /= abs(y)
     self.ebupdate()
 
   def __add__(self, y):
