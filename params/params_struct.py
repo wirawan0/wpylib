@@ -1,4 +1,4 @@
-# $Id: params_struct.py,v 1.1 2011-03-10 17:17:48 wirawan Exp $
+# $Id: params_struct.py,v 1.2 2011-03-10 19:21:33 wirawan Exp $
 #
 # wpylib.params.params_struct module
 # Created: 20110310
@@ -28,7 +28,8 @@ CHARACTERISTICS/USAGE PATTERN
 
 * Just like dict, it does not enforce a particular structure.
 * Use words only as keys (i.e. keys are valid python identifiers).
-* Do not prepend and append two underscores at the same time.
+* User fields should not use keywords prepended and appended by two underscores
+  (those names are reserved by python).
 
 
 """
@@ -39,11 +40,21 @@ class Struct(object):
   No particular structure is assumed.
   Results are fetchable by either X.member or X['member'] syntax.
   Limited dict-like operations are supported."""
+  def __init__(self, __src__=None, **p):
+    """Initializes the structure.
+    The arguments will be copied into the structure as the initial values
+    of the structure.
+    They can be a dict-like object (first argument), or "key=value"-type
+    argument passing.
+    """
+    if __src__: self.__dict__.update(__src__)
+    self.__dict__.update(p)
   def __getitem__(self, item):
-    if hasattr(self, item):
-      return getattr(self, item)
-    else:
-      raise KeyError, "Invalid result name: %s" % (item)
+    return self.__dict__[item]
+  def __setitem__(self, item, val):
+    self.__dict__[item] = val
   def __contains__(self, item):
-    #return item in dir(self)
-    return hasattr(self, item)
+    return item in self.__dict__
+  def __iter__(self):
+    return self.__dict__.__iter__()
+
