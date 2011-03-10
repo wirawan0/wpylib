@@ -1,4 +1,4 @@
-# $Id: params_flat.py,v 1.1 2010-09-30 16:16:38 wirawan Exp $
+# $Id: params_flat.py,v 1.2 2011-03-10 19:20:35 wirawan Exp $
 #
 # wpylib.params.params_flat module
 # Created: 20100930
@@ -247,8 +247,8 @@ class Parameters(dict):
       def __init__(self, ...):
         # self.opts holds the factory default
         self.opts = Parameters()
-        self.opts.cleanup = True # example
-    
+        self.opts.cleanup = True # an example parameter
+
       def doit(self, src=None, info=None,
                _defaults_=dict(src="source.txt", info="INFO.txt", debug=1),
                **_opts_):
