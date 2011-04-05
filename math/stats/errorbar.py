@@ -1,4 +1,4 @@
-# $Id: errorbar.py,v 1.3 2011-03-10 20:17:55 wirawan Exp $
+# $Id: errorbar.py,v 1.4 2011-04-05 19:20:55 wirawan Exp $
 #
 # Module wpylib.math.stats.errorbar
 # Errorbar text handling for Python
@@ -192,6 +192,7 @@ class errorbar(object):
     self.val *= y
     self.err *= abs(y)
     self.ebupdate()
+    return self
   def __div__(self, y):
     """Divides by a scalar value."""
     return self.__class__(self.val/y, self.err/abs(y), ebproc=self.ebproc)
@@ -200,6 +201,7 @@ class errorbar(object):
     self.val /= y
     self.err /= abs(y)
     self.ebupdate()
+    return self
 
   def __add__(self, y):
     """Adds by a scalar value or another errorbar value.
