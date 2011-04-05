@@ -1,4 +1,4 @@
-# $Id: fitting.py,v 1.3 2010-11-05 02:28:20 wirawan Exp $
+# $Id: fitting.py,v 1.4 2011-04-05 19:20:01 wirawan Exp $
 #
 # wpylib.math.fitting module
 # Created: 20100120
@@ -121,7 +121,7 @@ class fit_result(dict):
   pass
 
 def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
-             debug=10,
+             debug=0,
              outfmt=1,
              method='leastsq', opts={}):
   """
@@ -192,6 +192,7 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     print Guess
 
   if method == 'leastsq':
+    # modified Levenberg-Marquardt algorithm
     rslt = leastsq(fun_err,
                    x0=Guess, # initial coefficient guess
                    args=(x,y), # data onto which the function is fitted
