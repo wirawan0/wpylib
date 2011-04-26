@@ -1,4 +1,4 @@
-# $Id: file_db.py,v 1.4 2010-05-28 18:46:16 wirawan Exp $
+# $Id: file_db.py,v 1.5 2011-04-26 15:28:37 wirawan Exp $
 #
 # wpylib.db.file_db module
 # Created: 20100205
@@ -23,10 +23,15 @@ class file_rec(tuple):
   pass
 
 class file_table(object):
+  """A table (sqlite) to contain list of files and its fingerprints
+  (size, timestamp, hash).
+  Currently only MD5 hash is supported.
+  """
   # dtype for numpy (if wanted)
   dtype = numpy.dtype([
                        ('filename', 'S256'),
                        ('md5', 'S32'),
+                       # TODO: use sha1/sha256/sha512 as well
                        ('date', 'i4'),
                        ('time', 'i4'),
                        ('size', 'i8'),
