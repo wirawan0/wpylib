@@ -1,4 +1,4 @@
-# $Id: text_output.py,v 1.1 2011-05-11 20:28:51 wirawan Exp $
+# $Id: text_output.py,v 1.2 2011-05-12 14:51:02 wirawan Exp $
 #
 # wpylib.iofmt.text_output module
 # Quick-n-dirty text output utilities
@@ -98,17 +98,17 @@ class text_output(object):
     Options:
     - flush: if true, will flush every time the default action is invoked.
     """
-    print sys.getrefcount(self)
+    #print sys.getrefcount(self)
     self.out = None
     self.open(out)
-    print sys.getrefcount(self)
+    #print sys.getrefcount(self)
     if flush:
       self.set_write_func(self.write_flush)
     else:
       self.set_write_func(self.write)
-    print sys.getrefcount(self)
+    #print sys.getrefcount(self)
   def __del__(self):
-    print "Deleting object %s, file %s" % (self, self.out)
+    #print "Deleting object %s, file %s" % (self, self.out)
     self.close()
   def set_write_func(self, method):
     """Sets the default '_output' function to a python bound method.
@@ -143,7 +143,7 @@ class text_output(object):
     """
     if self.out:
       if self._autoopen:
-        print "Closing file " + self.out.name
+        #print "Closing file " + self.out.name
         self.out.close() # depends on existing close() method
       else:
         self.out.flush()
