@@ -1,4 +1,4 @@
-# $Id: text_tools.py,v 1.5 2010-09-27 19:54:26 wirawan Exp $
+# $Id: text_tools.py,v 1.6 2011-06-03 18:24:00 wirawan Exp $
 #
 # wpylib.text_tools
 # Created: 20091204
@@ -33,6 +33,19 @@ def make_matrix(Str, debug=None):
   rslt = numpy.matrix(Str2)
   if debug: print rslt
   return numpy.array(rslt)
+
+def vector_str(M, fmt="%22.15g", V=False):
+  if len(M.shape) != 1:
+    raise ValueError, "Wrong shape: expecting a one-dimensional array."
+  if V:
+    return "\n".join([ fmt % m for m in M ])
+  else:
+    return " ".join([ fmt % m for m in M ])
+
+def matrix_str(M, fmt="%22.15g"):
+  if len(M.shape) != 2:
+    raise ValueError, "Wrong shape: expecting a two-dimensional array."
+  return "\n".join([ " ".join([ fmt % c for c in R ] ) for R in M ])
 
 
 def str_unindent(S, amount=None):
