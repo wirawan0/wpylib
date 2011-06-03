@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id: text_input.py,v 1.2 2010-09-30 17:23:34 wirawan Exp $
+# $Id: text_input.py,v 1.3 2011-06-03 21:34:32 wirawan Exp $
 #
 # wpylib.iofmt.text_input module
 # Quick-n-dirty text input utilities
@@ -28,7 +28,7 @@ import re
 import numpy
 
 from wpylib.file.file_utils import open_input_file
-
+from wpylib.hacks import make_unbound_instance_method
 
 class text_input(object):
   '''Text input reader with support for UNIX-style comment marker (#) and
@@ -48,6 +48,8 @@ class text_input(object):
     else:
       open_opts = {}
     self.file = open_input_file(fname, **open_opts)
+    # Do NOT touch the "next_" field below unless you know what you're doing:
+    self.set_next_proc(self.next_line)
     # field_filtering_proc field can be used to filter unwanted fields, or do
     # some additional transformations before final feed to the main iteration.
     self.field_filtering_proc = lambda flds : flds
@@ -88,8 +90,10 @@ class text_input(object):
       if len(F) > 0 or not self.skip_blank_lines:
         return F
 
-  # Do NOT touch the "next" field below unless you know what you're doing:
-  next = next_line
+  def set_next_proc(self, proc):
+    self.next_ = make_unbound_instance_method(proc)
+  def next(self):
+    return self.next_(self)
 
   def seek_text(self, regex=None, match=None):
     '''Seeks the file until a particular piece text is encountered.
