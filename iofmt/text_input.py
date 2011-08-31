@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id: text_input.py,v 1.3 2011-06-03 21:34:32 wirawan Exp $
+# $Id: text_input.py,v 1.4 2011-08-31 20:28:30 wirawan Exp $
 #
 # wpylib.iofmt.text_input module
 # Quick-n-dirty text input utilities
@@ -28,7 +28,7 @@ import re
 import numpy
 
 from wpylib.file.file_utils import open_input_file
-from wpylib.hacks import make_unbound_instance_method
+from wpylib.py import make_unbound_instance_method
 
 class text_input(object):
   '''Text input reader with support for UNIX-style comment marker (#) and
@@ -61,6 +61,11 @@ class text_input(object):
   def __del__(self):
     if getattr(self, "file", None):
       self.file.close()
+
+  def close(self):
+    if getattr(self, "file", None):
+      self.file.close()
+      del self.file
 
   def __iter__(self):
     return self
