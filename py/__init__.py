@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2011-06-08 15:29:14 wirawan Exp $
+# $Id: __init__.py,v 1.2 2011-08-31 18:26:18 wirawan Exp $
 #
 # wpylib.py module
 # Created: 20110608
@@ -11,7 +11,7 @@ import sys
 import new
 
 
-def make_unbound_method(method):
+def make_unbound_instance_method(method):
   """Generates an unbound instance method from a possibly bound
   instance method."""
   return new.instancemethod(method.im_func, None, method.im_class)
