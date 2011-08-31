@@ -1,4 +1,4 @@
-# $Id: fortbin.py,v 1.3 2010-05-28 18:43:14 wirawan Exp $
+# $Id: fortbin.py,v 1.4 2011-08-31 20:27:31 wirawan Exp $
 #
 # wpylib.iofmt.fortbin module
 # Created: 20100208
@@ -24,6 +24,7 @@ class fortran_bin_file(object):
   record_marker_type = numpy.uint32
   default_int = numpy.int32
   default_float = numpy.float64
+  default_complex = numpy.complex128
   default_str = numpy.str_
 
   def __init__(self, filename=None, mode="r"):
@@ -39,31 +40,53 @@ class fortran_bin_file(object):
       self.F.close()
       self.F = None
 
+  @staticmethod
+  def fld_count(f):
+    """Determines how many items are in a Fortran data field.
+    The `f' argument is a field descriptor, which can be given as
+    either (name, dtype) or (name, dtype, length) tuple.
+    If length is not specified, then a scalar value is read.
+    Length is a scalar for 1-D array, or a tuple or list for multidimensional
+    array.
+    """
+    if len(f) > 2:
+      if isinstance(f[2], (list,tuple)):
+        return numpy.product(f[2])
+      else:
+        return f[2]
+    else:
+      return 1
+
+  def byte_length(self, *fields):
+    """Given a list of field descriptors, determine how many bytes this
+    """
+    expected_len = sum([ self.fld_count(f) * numpy.dtype(f[1]).itemsize
+                           for f in fields ])
+    return expected_len
+
   def read(self, *fields, **opts):
     """Reads a Fortran record.
+    This corresponds to a single READ statement in a Fortran program.
     The description of the fields are given as
     either (name, dtype) or (name, dtype, length) tuples.
     If length is not specified, then a scalar value is read.
     Length is a scalar for 1-D array, or a tuple or list for multidimensional
-    array."""
+    array.
+
+    Optional argument:
+    * dest = a structure to contain the result.
+    """
     from numpy import fromfile as rd
     if self.debug or opts.get("debug"):
       dbg = lambda msg : sys.stderr.write(msg)
     else:
       dbg = lambda msg : None
-    def fld_count(f):
-      if len(f) > 2:
-        if isinstance(f[2], (list,tuple)):
-          return numpy.product(f[2])
-        else:
-          return f[2]
-      else:
-        return 1
+
+    fld_count = self.fld_count
 
     reclen = numpy.fromfile(self.F, self.record_marker_type, 1)
     dbg("Record length = %d\n" % reclen)
-    expected_len = sum([ fld_count(f) * numpy.dtype(f[1]).itemsize
-                           for f in fields ])
+    expected_len = self.byte_length(*fields)
     dbg("Expected length = %d\n" % expected_len)
     if expected_len > reclen:
       raise IOError, \
