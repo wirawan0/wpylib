@@ -1,4 +1,4 @@
-# $Id: text_output.py,v 1.2 2011-05-12 14:51:02 wirawan Exp $
+# $Id: text_output.py,v 1.3 2011-09-02 15:07:47 wirawan Exp $
 #
 # wpylib.iofmt.text_output module
 # Quick-n-dirty text output utilities
@@ -93,14 +93,14 @@ class text_output(object):
     extra restrictions.
   ---------------------------------------------------------------------"""
 
-  def __init__(self, out=sys.stdout, flush=False):
+  def __init__(self, out=sys.stdout, flush=False, mode="w"):
     """Initializes the text output.
     Options:
     - flush: if true, will flush every time the default action is invoked.
     """
     #print sys.getrefcount(self)
     self.out = None
-    self.open(out)
+    self.open(out, mode=mode)
     #print sys.getrefcount(self)
     if flush:
       self.set_write_func(self.write_flush)
@@ -125,7 +125,7 @@ class text_output(object):
       # assume that method is a stand-alone callable object
       # that can accept "self" as the first argument
       self._output = method
-  def open(self, out=sys.stdout):
+  def open(self, out=sys.stdout, mode="w"):
     self.close()
     self._autoopen = False
     if out == None:
@@ -133,7 +133,7 @@ class text_output(object):
     elif self.is_file_like(out):
       self.out = out
     else: # assume a string (a filename)
-      self.out = open(out, "w")
+      self.out = open(out, mode)
       self.outfilename = out
       self._autoopen = True
   def close(self):
