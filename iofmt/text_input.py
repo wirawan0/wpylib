@@ -1,5 +1,5 @@
 #!/usr/bin/python
-# $Id: text_input.py,v 1.4 2011-08-31 20:28:30 wirawan Exp $
+# $Id: text_input.py,v 1.5 2011-09-05 19:09:21 wirawan Exp $
 #
 # wpylib.iofmt.text_input module
 # Quick-n-dirty text input utilities
@@ -57,6 +57,7 @@ class text_input(object):
     self.skip_blank_lines = True
     if len(opts) > 0:
       self.set_options(**opts)
+    self.lineno = 0
 
   def __del__(self):
     if getattr(self, "file", None):
@@ -82,6 +83,7 @@ class text_input(object):
   def next_rec(self):
     '''Yields the next record, which is already separated into fields.'''
     while True:
+      self.lineno += 1
       L = self.file.next()
       F = self.field_filtering_proc(L.split("#")[0].split())
       if len(F) > 0 or not self.skip_blank_lines:
@@ -90,6 +92,7 @@ class text_input(object):
   def next_line(self):
     '''Yields the next line, which is already separated into fields.'''
     while True:
+      self.lineno += 1
       L = self.file.next()
       F = self.field_filtering_proc(L.split("#")[0].rstrip())
       if len(F) > 0 or not self.skip_blank_lines:
