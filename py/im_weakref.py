@@ -1,6 +1,6 @@
 # -*- python -*-
 #
-# $Id: im_weakref.py,v 1.1 2011-06-08 15:50:07 wirawan Exp $
+# $Id: im_weakref.py,v 1.2 2011-09-07 15:04:15 wirawan Exp $
 #
 # wpylib.py.im_weakref
 # Created: 20110607
@@ -54,7 +54,7 @@ class im_ref(object):
     @raise ReferenceError: When the weak reference refers to a dead object
     '''
     if self.inst is not None and self.inst() is None:
-      raise ReferenceError
+      raise ReferenceError, "Original object (of type %s) is already dead." % (self.klass)
     elif self.inst is not None:
       # build a new instance method with a strong reference to the instance
       mtd = new.instancemethod(self.func, self.inst(), self.klass)
