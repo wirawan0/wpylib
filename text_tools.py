@@ -1,4 +1,4 @@
-# $Id: text_tools.py,v 1.6 2011-06-03 18:24:00 wirawan Exp $
+# $Id: text_tools.py,v 1.7 2011-09-07 15:03:54 wirawan Exp $
 #
 # wpylib.text_tools
 # Created: 20091204
@@ -6,6 +6,12 @@
 #
 # Simple and dirty text tools
 #
+
+"""
+wpylib.text_tools
+
+Frequently used text tools.
+"""
 
 import numpy
 from wpylib.sugar import ifelse
@@ -72,6 +78,13 @@ def str_unindent(S, amount=None):
     rslt.append(s)
 
   return "\n".join(rslt)
+
+
+def str_snippet(S):
+  """Standard processing for input snippet:
+  Unindent a string and strip the trailing whitespaces (mainly for input
+  file segments."""
+  return str_unindent(S).rstrip()
 
 
 def str_save_to_file(filename, s1, *more_str, **opts):
