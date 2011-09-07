@@ -1,4 +1,4 @@
-# $Id: params_flat.py,v 1.2 2011-03-10 19:20:35 wirawan Exp $
+# $Id: params_flat.py,v 1.3 2011-09-07 15:05:54 wirawan Exp $
 #
 # wpylib.params.params_flat module
 # Created: 20100930
@@ -175,10 +175,17 @@ class Parameters(dict):
     """
     if self._no_null_:
       for ov in self._list_:
-        if key in ov and ov[key] != None: return ov[key]
+        try:
+          v = ov[key]
+          if v != None: return v
+        except KeyError:
+          pass
     else:
       for ov in self._list_:
-        if key in ov: return ov[key]
+        try:
+          return ov[key]
+        except KeyError:
+          pass
     # Otherwise: -- but most likely this will return attribute error:
     return dict.__getattribute__(self, key)
   def __setattr__(self, key, value):
@@ -196,10 +203,17 @@ class Parameters(dict):
   def __getitem__(self, key):
     if self._no_null_:
       for ov in self._list_:
-        if key in ov and ov[key] != None: return ov[key]
+        try:
+          v = ov[key]
+          if v != None: return v
+        except KeyError:
+          pass
     else:
       for ov in self._list_:
-        if key in ov: return ov[key]
+        try:
+          return ov[key]
+        except KeyError:
+          pass
     raise KeyError, "Cannot find parameter `%s'" % key
   #def __setitem__(self, key, value):  # -- inherited from dict
   #  self._prm_[key] = value
@@ -274,17 +288,41 @@ class Parameters(dict):
     # then _opts_ excess-keyword parameters (see example of doit() above)
     if kwparam in localvars:
       _opts_ = localvars[kwparam]
-      contexts.append(_opts_)
+      if _opts_ != None:
+        # add this minimal check for a dict-like behavior rather
+        # than encountering a strange error later
+        if not hasattr(_opts_, "__getitem__") or not hasattr(_opts_, "__contains__"):
+          raise TypeError, \
+            ("The keyword parameter (variable/parameter `%s' in function `%s')" +
+             " is not a dict-like object)") \
+            % (kwparam, caller.f_code.co_name)
+        contexts.append(_opts_)
     else:
       _opts_ = {}
     # then opts, an explicitly-defined argument which contain a set of parameters
     if userparam in localvars:
       opts = localvars[userparam]
-      contexts.append(opts)
+      if opts != None:
+        # add this minimal check for a dict-like behavior rather
+        # than encountering a strange error later
+        if not hasattr(opts, "__getitem__") or not hasattr(opts, "__contains__"):
+          raise TypeError, \
+            ("The user parameter (variable/parameter `%s' in function `%s')" +
+             " is not a dict-like object)") \
+            % (userparam, caller.f_code.co_name)
+        contexts.append(opts)
     else:
-      opts = {}
       if userparam in _opts_:
-        contexts.append(_opts_[userparam])
+        opts = _opts_[userparam]
+        if opts != None:
+          # add this minimal check for a dict-like behavior rather
+          # than encountering a strange error later
+          if not hasattr(opts, "__getitem__") or not hasattr(opts, "__contains__"):
+            raise TypeError, \
+              ("The user parameter (variable/parameter `%s' in function `%s')" +
+               " is not a dict-like object)") \
+              % (userparam, caller.f_code.co_name)
+          contexts.append(opts)
 
     # then this own Parameters data will come here:
     contexts.append(self)
