@@ -1,4 +1,4 @@
-# $Id: params_flat.py,v 1.3 2011-09-07 15:05:54 wirawan Exp $
+# $Id: params_flat.py,v 1.4 2011-09-09 18:58:48 wirawan Exp $
 #
 # wpylib.params.params_flat module
 # Created: 20100930
@@ -124,15 +124,30 @@ class Parameters(dict):
 
     Options:
     * _no_null_ = if True, look for the first non-None value.
-    * _flatten_ = will flatten the key-value pairs.
+    * _flatten_ = will flatten the key-value pairs from the overriding dicts
+      into the self object.
       Note that this may make the Parameters object unnecessarily large in memory.
       Additionally, this means that the updates in the contents of the dicts
       passed as the _override_dicts_ can no longer be reflected in this object
       because of the shallow copying involved here.
-    * _kwparam_
-    * _userparam_
-    At present, the `flatten' attribute will not be propagated to the child
-    Parameters objects created by this parent object.
+      At present, the `_flatten_' attribute will not be propagated to the child
+      Parameters objects created by this parent object.
+    * _kwparam_ = the name of the excess argument dict to look for in the
+      function argument list (default: `_opts_').
+    * _userparam_ = the name of the explicitly defined user-defined parameter
+      (of a dict type) in the function argument list (default: `_p').
+    * _localvars_ = set to true to include function local variables in the
+      lookup chain. Default is False because it can be very confusing!
+      We just have no control on what local variables would be involved
+      in a function and the sheer potential of creating vars with the same name
+      as the value we want to look up---all will open up to infinite possibility
+      of surprises.
+      At present, the `_localvars_' attribute will not be propagated to the child
+      Parameters objects created by this parent object.
+      Caveat: only variables defined till the point of calling of the method
+      _create_() below will be searched in the lookup process.
+      Values defined or updated later will not be reflected in the lookup process.
+      (See params_flat_test.py, test2 and test2b routines.)
     """
 
     # Remove standard dict procedure names not beginning with "_":
@@ -156,8 +171,10 @@ class Parameters(dict):
     self.__dict__["_kwparam_"] = _opts_.get("_kwparam_", "_opts_")
     self.__dict__["_userparam_"] = _opts_.get("_userparam_", "_p")
     self.__dict__["_no_null_"] = ifelse(_opts_.get("_no_null_"), True, False)
+    self.__dict__["_localvars_"] = ifelse(_opts_.get("_localvars_"), True, False)
     # Finally, filter out reserved keywords from the dict:
-    for badkw in ("_kwparam_", "_userparam_", "_no_null_", "_flatten_"):
+    for badkw in ("_kwparam_", "_userparam_", "_no_null_", "_flatten_", \
+      "_localvars_"):
       #if badkw in self: del self[badkw] -- recursive!!!
       if dict.__contains__(self,badkw): del self[badkw]
   def _copy_(self):
@@ -240,7 +257,7 @@ class Parameters(dict):
     rslt = self._copy_()
     rslt._update_(srcdict)
     return rslt
-  def _create_(self, kwparam=None, userparam=None, *defaults):
+  def _create_(self, *defaults, **_options_):
     """Creates a new Parameters() object for standardized function-level
     parameter lookup.
     This routine *must* be called by the function where we want to access these
@@ -249,6 +266,7 @@ class Parameters(dict):
 
     The order of lookup is definite:
     * local variables of the calling subroutine will take precedence
+      (if _localvars_ is set to True)
     * the excess keyword-based parameters, 
     * user-supplied Parameters-like object, which is 
     * the dicts (passed in the `defaults' unnamed parameter list) is searched
@@ -269,25 +287,42 @@ class Parameters(dict):
         # FIXME: use self-introspection to reduce kitchen-sink params here:
         p = self.opts._create_(_defaults_)
         #   ^ This will create an equivalent of:
-        # Parameters(locals(), _opts_, _opts_.get('opts'), self.opts, _defaults)
+        # Parameters(_opts_, _opts_.get('_p'), self.opts, _defaults_)
         # Now use it:
         if p.cleanup:
-          ... do something
+          self.do_the_cleanup() # ... do something
+
+    * Options accepted by the _create_ function are:
+      - _kwparam_ (string) = name of excess-parameter dict.
+        Default: None; refer back to the object's _kwparam_ attribute.
+      - _userparam_ (string) = name of explicitly-given parameter dict
+        Default: None; refer back to the object's _userparam_ attribute.
+      - _localvars_ (boolean) = whether to include the local vars in the
+        lookup chain. Default: None; refer back to the object's
+        _localvars_ attribute.
     """
     # Look up the stack of the calling function in order to retrieve its
     # local variables
     from inspect import stack
     caller = stack()[1][0] # one frame up; element-0 is the stack frame
+    _kwparam_ = _options_.get("_kwparam_", None)
+    _userparam_ = _options_.get("_userparam_", None)
+    _localvars_ = _options_.get("_localvars_", None)
 
-    if kwparam == None: kwparam = self._kwparam_
-    if userparam == None: userparam = self._userparam_
+    if _kwparam_ == None: _kwparam_ = self._kwparam_
+    if _userparam_ == None: _userparam_ = self._userparam_
+    if _localvars_ == None: _localvars_ = self._localvars_
 
     # local variables will be the first scope to look for
     localvars = caller.f_locals
-    contexts = [ localvars ]
+    #print "?? localvars = ", _localvars_
+    if _localvars_:
+      contexts = [ localvars ]
+    else:
+      contexts = []
     # then _opts_ excess-keyword parameters (see example of doit() above)
-    if kwparam in localvars:
-      _opts_ = localvars[kwparam]
+    if _kwparam_ in localvars:
+      _opts_ = localvars[_kwparam_]
       if _opts_ != None:
         # add this minimal check for a dict-like behavior rather
         # than encountering a strange error later
@@ -295,13 +330,13 @@ class Parameters(dict):
           raise TypeError, \
             ("The keyword parameter (variable/parameter `%s' in function `%s')" +
              " is not a dict-like object)") \
-            % (kwparam, caller.f_code.co_name)
+            % (_kwparam_, caller.f_code.co_name)
         contexts.append(_opts_)
     else:
       _opts_ = {}
     # then opts, an explicitly-defined argument which contain a set of parameters
-    if userparam in localvars:
-      opts = localvars[userparam]
+    if _userparam_ in localvars:
+      opts = localvars[_userparam_]
       if opts != None:
         # add this minimal check for a dict-like behavior rather
         # than encountering a strange error later
@@ -309,11 +344,11 @@ class Parameters(dict):
           raise TypeError, \
             ("The user parameter (variable/parameter `%s' in function `%s')" +
              " is not a dict-like object)") \
-            % (userparam, caller.f_code.co_name)
+            % (_userparam_, caller.f_code.co_name)
         contexts.append(opts)
     else:
-      if userparam in _opts_:
-        opts = _opts_[userparam]
+      if _userparam_ in _opts_:
+        opts = _opts_[_userparam_]
         if opts != None:
           # add this minimal check for a dict-like behavior rather
           # than encountering a strange error later
@@ -321,7 +356,7 @@ class Parameters(dict):
             raise TypeError, \
               ("The user parameter (variable/parameter `%s' in function `%s')" +
                " is not a dict-like object)") \
-              % (userparam, caller.f_code.co_name)
+              % (_userparam_, caller.f_code.co_name)
           contexts.append(opts)
 
     # then this own Parameters data will come here:
@@ -331,7 +366,7 @@ class Parameters(dict):
     contexts += [ d for d in defaults ]
 
     # Now construct the Parameters() class for this calling function:
-    return Parameters(_kwparam_=kwparam, _userparam_=userparam, *contexts)
+    return Parameters(_kwparam_=self._kwparam_, _userparam_=self._userparam_, *contexts)
 
   #def __dict__(self):
   #  return self._prm_
