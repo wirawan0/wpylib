@@ -1,4 +1,4 @@
-# $Id: params_flat.py,v 1.4 2011-09-09 18:58:48 wirawan Exp $
+# $Id: params_flat.py,v 1.5 2011-09-12 21:58:43 wirawan Exp $
 #
 # wpylib.params.params_flat module
 # Created: 20100930
@@ -245,6 +245,12 @@ class Parameters(dict):
   #  return self._prm_.__iter__()
   #def _iteritems_(self):
   #  return self._prm_.iteritems()
+  def _get_(self, key, default=None):
+    """Nested version of dict.get for this Parameters object."""
+    try:
+      return self[key]
+    except KeyError:
+      return default
   def _update_(self, srcdict):
     """Updates the most overriding parameters with key-value pairs from
     srcdict.
