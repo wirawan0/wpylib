@@ -1,4 +1,4 @@
-# $Id: text_tools.py,v 1.7 2011-09-07 15:03:54 wirawan Exp $
+# $Id: text_tools.py,v 1.8 2011-09-13 21:50:16 wirawan Exp $
 #
 # wpylib.text_tools
 # Created: 20091204
@@ -49,6 +49,8 @@ def vector_str(M, fmt="%22.15g", V=False):
     return " ".join([ fmt % m for m in M ])
 
 def matrix_str(M, fmt="%22.15g"):
+  if isinstance(M, numpy.matrix):
+    M = numpy.asarray(M)
   if len(M.shape) != 2:
     raise ValueError, "Wrong shape: expecting a two-dimensional array."
   return "\n".join([ " ".join([ fmt % c for c in R ] ) for R in M ])
