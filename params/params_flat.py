@@ -1,4 +1,4 @@
-# $Id: params_flat.py,v 1.5 2011-09-12 21:58:43 wirawan Exp $
+# $Id: params_flat.py,v 1.6 2011-09-19 20:06:45 wirawan Exp $
 #
 # wpylib.params.params_flat module
 # Created: 20100930
@@ -255,7 +255,10 @@ class Parameters(dict):
     """Updates the most overriding parameters with key-value pairs from
     srcdict.
     Srcdict can be either a dict-derived object or a Parameters-derived
-    object."""
+    object.
+    WARNING: As for now the additional dicts in the search list are *not*
+    updated into the "self" dict.
+    """
     dict.update(self, srcdict)
   def __add__(self, srcdict):
     """Returns a copy of the Parameters() object, with the most-overriding
