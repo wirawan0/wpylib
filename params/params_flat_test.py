@@ -1,4 +1,4 @@
-# $Id: params_flat_test.py,v 1.2 2011-09-09 18:58:48 wirawan Exp $
+# $Id: params_flat_test.py,v 1.3 2011-10-06 19:14:51 wirawan Exp $
 # 20100930
 
 from wpylib.params import flat as params
@@ -55,6 +55,10 @@ def test2b(**_opts_):
   print "new deltau = ", p.deltau
 
 
+def dump_objects():
+  """See what's in each dicts.
+  """
+  pass
 
 
 if __name__ == "__main__":

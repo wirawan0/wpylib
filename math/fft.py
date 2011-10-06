@@ -1,4 +1,4 @@
-# $Id: fft.py,v 1.1 2010-02-24 14:27:23 wirawan Exp $
+# $Id: fft.py,v 1.2 2011-10-06 19:14:48 wirawan Exp $
 #
 # wpylib.math.fft module
 # Created: 20100205
@@ -37,7 +37,7 @@ The slice [gmin:gmax:gstep] will certainly result in an empty slice.
 To do this, we define two functions below.
 First, fft_grid_ranges1 generates the ranges for each dimension, then
 fft_grid_ranges itself generates all the combination of ranges (which cover
-all combinations of positive and ndgative frequency domains for all
+all combinations of positive and negative frequency domains for all
 dimensions.)
 
 For a (5x8) FFT grid, we will have
@@ -68,6 +68,57 @@ fft_grid_ranges1 = lambda Gmin, Gmax, Gstep : \
 
 fft_grid_ranges = lambda Gmin, Gmax, Gstep : \
                   all_combinations(fft_grid_ranges1(Gmin, Gmax, Gstep))
+
+
+class fft_grid(object):
+  """A class describing a N-dimensional grid for plane wave
+  (or real-space) basis.
+  In this version, the grid is centered at (0,0,...) coordinate.
+  To actually create a grid, use the new_dens() method.
+  """
+  dtype = complex
+  def __init__(self, Gsize=None, Gmin=None, Gmax=None, dtype=None):
+    """Creates a new grid descriptor.
+    There are two possible methods, and you must choose either one for
+    initialization:
+    * Gsize = an N-dimensional array (list, tuple, ndarray) specifying
+      the number of grid points in each dimension.
+    or
+    * Gmin, Gmax = a pair of N-dimensional arrays (list, tuple, ndarray)
+      specifying the smallest (most negative) and largest (most positive)
+      coordinates in each dimension.
+      The grid size will be specified to fit this range.
+    """
+    from numpy import maximum
+    if Gsize != None:
+      self.Gsize = numpy.array(Gsize, dtype=int)
+      (self.Gmin, self.Gmax) = fft_grid_bounds(self.Gsize)
+    elif Gmin != None and Gmax != None:
+      self.Gmin = numpy.array(Gmin, dtype=int)
+      self.Gmax = numpy.array(Gmax, dtype=int)
+      # Figure out the minimum grid size to fit this data:
+      Gsize_min = abs(self.Gmin) * 2
+      Gsize_max = abs(self.Gmax) * 2 + (abs(self.Gmax) % 2)
+      Gsize_def = self.Gmax - self.Gmin + 1
+      self.Gsize = maximum(maximum(Gsize_min, Gsize_max), Gsize_def)
+    else:
+      raise ValueError, \
+        "Either Gsize or (Gmin,Gmax) parameters have to be specified."
+    if dtype != None:
+      self.dtype = dtype
+    self.ndim = len(self.Gsize)
+
+  def new_dens(self, zero=False, dtype=None):
+    """Creates a new N-dimensional array (grid)."""
+    if dtype == None: dtype = self.dtype
+    if zero:
+      return numpy.zeros(self.Gsize, dtype=dtype)
+    else:
+      return numpy.empty(self.Gsize, dtype=dtype)
+
+  def check_index(self, G):
+    """Check if an index is valid according to Gmin, Gmax boundary."""
+    return numpy.all(self.Gmin <= G) and numpy.all(G <= self.Gmax)
 
 
 def fft_r2g(dens):

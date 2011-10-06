@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2011-07-14 19:00:59 wirawan Exp $
+# $Id: __init__.py,v 1.2 2011-10-06 19:14:49 wirawan Exp $
 #
 # wpylib.math.linalg main module
 # Created: 20110714
@@ -13,6 +13,12 @@ already provided by numpy.
 """
 
 import numpy
+import numpy.linalg
+
+# My favorites:
+from numpy import dot, trace
+from numpy.linalg import det, inv
+
 
 def matmul(*Mats):
   """Do successive matrix product. For example,
