@@ -2,7 +2,7 @@
 
 """
 Symmetric array layout (lower diagonal, Fortran column-major ordering):
-
+i >= j
 
      ----> j
   |  (1,1)
@@ -11,7 +11,7 @@ i |  (2,1)   (2,2)
        :       :       :
      (N,1)   (N,2)   (N,3) ... (N,N)
 
-In linear form:
+The linear index goes like this:
 
        1
        2      N+1
@@ -71,3 +71,323 @@ def copy_over_array(N, arr_L):
       print "%5d %5d %5d %5d %5d" % (ii,jj,iskip,jskip,ldiag_index+1)
       rslt[i,j] = arr_L[ldiag_index]
   return rslt
+
+
+# These are the reference implementation:
+
+def LD(i,j,N):
+  """python equivalent of gafqmc_LD on nwchem-gafqmc integral
+  dumper module.
+  Translates a lower-diagonal index (ii >= jj) to linear index
+  0, 1, 2, 3, ...
+  This follows python convention; thus 0 <= i < N, and so also j.
+
+  """
+  # iskip is row traversal, jskip is column traversal.
+  # (iskip+jskip) is the final array index.
+  if i >= j:
+    ii = i
+    jj = j
+  else:
+    ii = j
+    jj = i
+
+  iskip = ii - jj # + 1
+  #jskip = (jj-1)*N - (jj-2)*(jj-1)/2  # for 1-based
+  jskip = (jj)*N - (jj-1)*(jj)//2  # for 0-based
+  return iskip + jskip
+
+
+def LDdec(ij, N):
+  """Back-translates linear index 0, 1, 2, 3, ... to a lower-diagonal
+  index pair (ii >= jj).
+  This is not optimal, but it avoids storing an auxiliary array
+  that is easily computable. Plus, this function is supposed to
+  be called rarely.
+  """
+  jskip = 0
+  for j in xrange(N):
+    if jskip + (N - j) > ij:
+      jj = j
+      ii = ij - jskip + j
+      return (ii,jj)
+    jskip += N - j
+
+  raise ValueError, "LDdec(ij=%d,N=%d): invalid index ij" % (ij,N)
+
+# end reference implementation
+
+def test_LD_enc_dec(N):
+  """Simple test to check LD encoding and decoding correctness.
+  For python-style indexing (0 <= i < N, similarly for j)."""
+  for i in xrange(N):
+    for j in xrange(N):
+      ij = LD(i,j,N)
+      (ii,jj) = LDdec(ij,N)
+      print "%3d %3d | %6d | %3d %3d" % (i,j, ij, ii,jj)
+
+
+def test_LD_enc_dec_diagonal(N):
+  """Simple test to check LD encoding and decoding correctness.
+  For python-style indexing (0 <= i < N, similarly for j).
+  For diagonal element only
+  """
+  from numpy import sqrt
+  LDsize = N * (N+1) / 2
+  for i in xrange(N):
+      j = i
+      ij = LD(i,j,N)
+      (ii,jj) = LDdec(ij,N)
+      jj2 = int( sqrt(((LDsize) - ij) * 2) )
+      print "%3d %3d | %6d ( %6d %6d ) | %3d %3d // %3d %3d" % (
+        i,j,
+        ij,
+        ij-LDsize, -2*(ij-LDsize),
+        ii,jj,
+        -1, jj2)
+      #                      ^^ distance from end of array
+
+
+
+
+
+"""
+Faster LDdec is possible.
+
+Consider:
+  jskip = (jj)*N - (jj-1)*(jj)/2  # for 0-based
+        = jj*(2*N - (jj-1)) / 2
+
+
+
+"""
+
+def Hack2_LD_enc_dec(N):
+  """Simple test to check LD encoding and decoding correctness.
+  For python-style indexing (0 <= i < N, similarly for j)."""
+  from numpy import sqrt
+  LDsize = N * (N+1) / 2
+  for j in xrange(N):
+    for i in xrange(j,N):
+      ij = LD(i,j,N)
+      (ii,jj) = LDdec(ij,N)
+      jj2 = ( sqrt(((LDsize) - ij) * 2) )
+      #print "%3d %3d | %6d | %3d %3d" % (i,j, ij, ii,jj)
+      print "%3d %3d | %6d   %6d  | %3d %3d // %8.4f" % (
+        i,j,
+        ij, LDsize-ij,
+        ii,jj,
+        jj2)
+
+
+
+###############################################################################
+
+
+"""
+UPPER DIAGONAL IMPLEMENTATION
+
+j >= i
+Should be easier (?)
+Symmetric array layout (lower diagonal, Fortran column-major ordering):
+
+
+     ----> j
+  |  (1,1)   (1,2)   (1,3) ... (1,N)
+i |          (2,2)   (2,3) ... (2,N)
+  v                  (3,3) ... (3,N)
+                            :    :
+                               (N,N)
+
+The linear index goes like this:
+       1       2       4   ... N*(N+1)/2-4
+               3       5   ... N*(N+1)/2-3
+                       6   ... N*(N+1)/2-2
+                            :  N*(N+1)/2-1
+                               N*(N+1)/2
+
+# For 1-based indices:
+
+iskip = i - j    (easy)
+jskip = j * (j+1) / 2
+
+In the large j limit, jskip is approximately 0.5*j**2 .
+This means that the j can be 'guessed' by:
+  j_guess = int( sqrt(ij * 2) )
+          = int( sqrt(j * (j + 1) + (i - j)*2) )
+          = int( sqrt(j**2 + 2*i - j) )
+
+Remember that i <= j, so j_guess ranges from (inclusive endpoints):
+
+  j_guess_min = int( sqrt(j**2 - j + 2) )
+  j_guess_max = int( sqrt(j**2 + j) )
+
+Note: since
+
+  sqrt((j-1)**2) = sqrt(j**2 - 2j + 1)
+  sqrt((j+1)**2) = sqrt(j**2 + 2j + 1)
+
+this means that, for all j > 0,
+  j_guess_min >= j-1
+  j_guess_max = j
+
+So only those two j values matter.
+Once we get the j, we can get the i value easily.
+
+# For 0-based indices:
+
+iskip = i - j    (easy)
+jskip = (j+1) * (j+2) / 2 - 1
+"""
+
+def UD(i,j,N):
+  """Translates a lower-diagonal index (ii <= jj) to linear index
+  0, 1, 2, 3, ...
+  This follows python convention; thus 0 <= i < N, and so also j.
+
+  """
+  # iskip is row traversal, jskip is column traversal.
+  # (iskip+jskip) is the final array index.
+  if i <= j:
+    ii = i
+    jj = j
+  else:
+    ii = j
+    jj = i
+
+  iskip = ii - jj # + 1
+  jskip = (j+1) * (j+2) // 2 - 1  # for 0-based
+  return iskip + jskip
+
+def UDdec(ij, N):
+  """Back-translates linear index 0, 1, 2, 3, ... to a lower-diagonal
+  index pair (ii <= jj).
+  This is not optimal, but it avoids storing an auxiliary array
+  that is easily computable. Plus, this function is supposed to
+  be called rarely.
+  Derived from the 1-based version (UDdec1) below.
+  """
+
+  jskip = 0
+  for j in xrange(1,N+1):
+    jskip = j * (j+1) // 2
+    if ij < jskip:
+      i = ij - jskip + j
+      return (i,j-1)
+
+
+def UD1(i,j,N):
+  """The 1-based version of UD
+  """
+  # iskip is row traversal, jskip is column traversal.
+  # (iskip+jskip) is the final array index.
+  if i <= j:
+    ii = i
+    jj = j
+  else:
+    ii = j
+    jj = i
+
+  iskip = ii - jj
+  jskip = (j) * (j+1) // 2  # for 1-based
+  return iskip + jskip
+
+def UDdec1(ij, N):
+  """Back-translates linear index 1, 2, 3, ... to a lower-diagonal
+  index pair (ii <= jj).
+  This is not optimal, but it avoids storing an auxiliary array
+  that is easily computable. Plus, this function is supposed to
+  be called rarely.
+  """
+  jskip = 0
+  for j in xrange(1,N+1):
+    jskip = j * (j+1) // 2
+    if ij < jskip + 1:
+      """
+      ij = iskip + jskip
+      -> iskip = ij - jskip = i - j
+      -> i = ij - jskip + j
+      """
+      i = ij - jskip + j
+      return (i,j)
+
+  raise ValueError, "UDdec1(ij=%d,N=%d): invalid index ij" % (ij,N)
+
+
+def UDdec1_v2(ij, N):
+  """Back-translates linear index 1, 2, 3, ... to a lower-diagonal
+  index pair (ii <= jj).
+  Version 2, avoiding loop at a cost of doing sqrt() call.
+  """
+  from numpy import sqrt
+  j = int(sqrt(ij*2+1))
+  jskip = j * (j+1) // 2
+  if ij < jskip + 1:
+    pass # correct already
+  else:
+    j = j + 1
+    jskip = j * (j+1) // 2
+  i = ij - jskip + j
+  return (i,j)
+
+def UDdec1_v3(ij, N):
+  """Back-translates linear index 1, 2, 3, ... to a lower-diagonal
+  index pair (ii <= jj).
+  Version 3, avoiding loop at a cost of doing sqrt() call.
+  """
+  from numpy import sqrt
+  j = int(sqrt(ij*2))  # +1 not needed?
+  jskip = j * (j+1) // 2
+  if ij < jskip + 1:
+    pass # correct already
+  else:
+    j = j + 1
+    jskip = j * (j+1) // 2
+  i = ij - jskip + j
+  return (i,j)
+
+
+def test_UD_enc_dec(N):
+  """Simple test to check UD encoding and decoding correctness.
+  For python-style indexing (0 <= i < N, similarly for j)."""
+  # Success for N = 5, 8
+  for j in xrange(N):
+    for i in xrange(0,j+1):
+      ij = UD(i,j,N)
+      (ii,jj) = UDdec(ij,N)
+#      print "%3d %3d | %6d | %3d %3d" % (i,j, ij, ii,jj)
+      print "%3d %3d | %6d | %3d %3d   >> %1s" % (i,j, ij, ii,jj, ("v" if i==ii and j==jj else "X"))
+
+def test_UD_enc_dec1(N):
+  """Simple test to check UD encoding and decoding correctness.
+  For python-style indexing (0 <= i < N, similarly for j)."""
+  for j in xrange(1,N+1):
+    for i in xrange(1,j+1):
+      ij = UD1(i,j,N)
+      (ii,jj) = UDdec1(ij,N)
+      print "%3d %3d | %6d | %3d %3d   >> %1s" % (i,j, ij, ii,jj, ("v" if i==ii and j==jj else "X"))
+
+def hack1_UD_enc_dec1(N):
+  """Simple test to check UD encoding and decoding correctness.
+  For python-style indexing (0 <= i < N, similarly for j)."""
+  from numpy import sqrt
+  ok = True
+  for j in xrange(1,N+1):
+    for i in xrange(1,j+1):
+      ij = UD1(i,j,N)
+      (ii,jj) = UDdec1(ij,N)
+      #iii = i
+      #jjj = int(sqrt(ij*2+1))
+      #(iii,jjj) = UDdec1_v2(ij,N)  # -- tested OK empirically till N=1000
+      (iii,jjj) = UDdec1_v3(ij,N) # also tested OK empirically till N=1000
+      if not (i==iii and j==jjj):
+        ok=False
+        print "%3d %3d | %6d %6d | %3d %3d  : %3d %3d >> %1s" % (
+          i,j,
+          ij, ij*2,
+          ii,jj,
+          iii, jjj,
+          ("v" if i==iii and j==jjj else "X"))
+  print ("ok" if ok else "NOT OK")
+
+
