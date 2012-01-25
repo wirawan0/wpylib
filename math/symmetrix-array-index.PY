@@ -42,6 +42,28 @@ Note:
    {a=1}
 """
 
+"""
+Update 20120124: the jskip formula can be written in similar fashion to
+the 'UD' array format, as shown below.
+
+The endpoint of the array index is N(N+1)/2 .
+The (negative) offset of the j index from the rightmost column is
+dj = (N + 1 - j).
+Note: dj is 1 on the rightmost column.
+
+So, the jskip is given by:
+
+N(N+1)/2 - (N+1-j)(N+2-j) / 2 =
+  = [ N**2 + N - ( N**2 + 3N - 2jN + 2 - 3j + j**2 ) ] / 2
+  = ( -2N + 2jN - 2 + 3j - j**2 ) / 2
+  = (j-1)N + (j-2)(j-1)/2
+  >>> the same formula as before.
+
+
+
+
+"""
+
 import numpy
 
 def test_jskip_1(N, M):
@@ -175,7 +197,7 @@ def Hack2_LD_enc_dec(N):
       #print "%3d %3d | %6d | %3d %3d" % (i,j, ij, ii,jj)
       print "%3d %3d | %6d   %6d  | %3d %3d // %8.4f" % (
         i,j,
-        ij, LDsize-ij,
+        ij, (LDsize-ij) * 2,
         ii,jj,
         jj2)
 
