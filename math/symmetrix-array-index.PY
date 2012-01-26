@@ -43,7 +43,10 @@ Note:
 """
 
 """
-Update 20120124: the jskip formula can be written in similar fashion to
+Update 20120124:
+
+Faster LDdec is possible.
+The jskip formula can be written in similar fashion to
 the 'UD' array format, as shown below.
 
 The endpoint of the array index is N(N+1)/2 .
@@ -59,9 +62,36 @@ N(N+1)/2 - (N+1-j)(N+2-j) / 2 =
   = (j-1)N + (j-2)(j-1)/2
   >>> the same formula as before.
 
+We can now make a similar analysis as in UD case to make a j_guess
+formula:
 
+  j_guess = int( N+1 - sqrt((N(N+1)/2 - ij) * 2) )
 
+Note that:
+  ij = N(N+1)/2 - (N+1-j)(N+2-j)/2 + i-j+1
 
+Now focus on this expression:
+
+  xj := ( N(N+1)/2 - ij) * 2
+      = (N+1-j)*(N+2-j) - 2*(i+1-j)
+
+So the maximum value of xj (for i=j) is:
+
+  xj_max = (N+1-j)*(N+2-j) - 2
+         = (N+1-j)**2 + (N+1-j) - 2
+
+  xj_min = (N+1-j)*(N+2-j) - 2*(N+1-j)
+         = (N+1-j)**2 - (N+1-j)
+
+Again, these values satisfy the inequality
+
+  (N-j)**2 < xj_min <= xj_max < (N+2-j)**2
+
+Thus translates to
+  N-j <= int(sqrt(xj)) <= N+1-j
+
+or
+  j <= j_guess <= j+1
 """
 
 import numpy
@@ -115,8 +145,28 @@ def LD(i,j,N):
     jj = i
 
   iskip = ii - jj # + 1
-  #jskip = (jj-1)*N - (jj-2)*(jj-1)/2  # for 1-based
   jskip = (jj)*N - (jj-1)*(jj)//2  # for 0-based
+  return iskip + jskip
+
+def LD1(i,j,N):
+  """python equivalent of gafqmc_LD on nwchem-gafqmc integral
+  dumper module.
+  Translates a lower-diagonal index (ii >= jj) to linear index
+  0, 1, 2, 3, ...
+  This follows Fortran convention; thus 1 <= i <= N, and so also j.
+
+  """
+  # iskip is row traversal, jskip is column traversal.
+  # (iskip+jskip) is the final array index.
+  if i >= j:
+    ii = i
+    jj = j
+  else:
+    ii = j
+    jj = i
+
+  iskip = ii - jj + 1
+  jskip = (jj-1)*N - (jj-2)*(jj-1)//2  # for 1-based
   return iskip + jskip
 
 
@@ -136,6 +186,38 @@ def LDdec(ij, N):
     jskip += N - j
 
   raise ValueError, "LDdec(ij=%d,N=%d): invalid index ij" % (ij,N)
+
+def LDdec1(ij, N):
+  """Back-translates linear index 1, 2, 3, ... to a lower-diagonal
+  index pair (ii >= jj).
+  This is not optimal, but it avoids storing an auxiliary array
+  that is easily computable. Plus, this function is supposed to
+  be called rarely.
+  """
+  jskip = 0
+  for j in xrange(1, N+1):
+    if jskip + (N + 1 - j) >= ij:
+      jj = j
+      ii = ij - jskip + j - 1
+      return (ii,jj)
+    jskip += (N + 1 - j)
+
+  raise ValueError, "LDdec1(ij=%d,N=%d): invalid index ij" % (ij,N)
+
+def LDdec1_v2(ij, N):
+  """Version 2, avoiding loop, but adding sqrt() function
+  """
+  from numpy import sqrt
+  LDsize = N*(N+1) // 2
+  j = N + 1 - int( sqrt((LDsize - ij) * 2) )
+  jskip = (j-1)*N - (j-2)*(j-1)//2
+  if ij > jskip:
+    pass # correct already
+  else:
+    j = j - 1
+    jskip = (j-1)*N - (j-2)*(j-1)//2
+  i = ij - jskip + j - 1
+  return (i,j)
 
 # end reference implementation
 
@@ -169,21 +251,6 @@ def test_LD_enc_dec_diagonal(N):
         -1, jj2)
       #                      ^^ distance from end of array
 
-
-
-
-
-"""
-Faster LDdec is possible.
-
-Consider:
-  jskip = (jj)*N - (jj-1)*(jj)/2  # for 0-based
-        = jj*(2*N - (jj-1)) / 2
-
-
-
-"""
-
 def Hack2_LD_enc_dec(N):
   """Simple test to check LD encoding and decoding correctness.
   For python-style indexing (0 <= i < N, similarly for j)."""
@@ -194,12 +261,43 @@ def Hack2_LD_enc_dec(N):
       ij = LD(i,j,N)
       (ii,jj) = LDdec(ij,N)
       jj2 = ( sqrt(((LDsize) - ij) * 2) )
+      j_guess = int(N + 1 - jj2)  # for some reason this is the one that works for 0-based index
+      ok1 = (jj <= j_guess)
+      ok2 = (j_guess <= jj+1)
+      ok = ((jj <= j_guess) and (j_guess <= jj+1))
       #print "%3d %3d | %6d | %3d %3d" % (i,j, ij, ii,jj)
-      print "%3d %3d | %6d   %6d  | %3d %3d // %8.4f" % (
-        i,j,
-        ij, (LDsize-ij) * 2,
-        ii,jj,
-        jj2)
+      if not ok:
+        # Verified OK empirically till N=1000.
+        print "%3d %3d | %6d   %6d  | %3d %3d // %8.4f %3d  %c %d %d" % (
+          i,j,
+          ij, (LDsize-ij) * 2,
+          ii,jj,
+          jj2, j_guess, ("." if ok else "X"), ok1,ok2)
+
+def Hack3_LD_enc_dec(N, print_all=False):
+  """Simple test to check LD encoding and decoding correctness.
+  For Fortran-style indexing (1 <= i <= N, similarly for j)."""
+  from numpy import sqrt
+  LDsize = N * (N+1) / 2
+  for j in xrange(1,N+1):
+    for i in xrange(j,N+1):
+      ij = LD1(i,j,N)
+      (ii,jj) = LDdec1(ij,N)
+      (ii,jj) = LDdec1_v2(ij,N)
+      jj2 = ( sqrt(((LDsize) - ij) * 2) )
+      j_guess = N + 1 - int(jj2)
+      OK = (ii==i and jj==j)
+      ok1 = (jj <= j_guess)
+      ok2 = (j_guess <= jj+1)
+      ok = ((jj <= j_guess) and (j_guess <= jj+1))
+      #print "%3d %3d | %6d | %3d %3d" % (i,j, ij, ii,jj)
+      if print_all or not (OK and ok):
+        # Verified OK empirically till N=1000.
+        print "%3d %3d | %6d   %6d  | %3d %3d  %c  // %8.4f %3d  %c %d %d" % (
+          i,j,
+          ij, (LDsize-ij) * 2,
+          ii,jj, ("." if OK else "X"),
+          jj2, j_guess, ("." if ok else "X"), ok1,ok2)
 
 
 
@@ -391,7 +489,7 @@ def test_UD_enc_dec1(N):
 
 def hack1_UD_enc_dec1(N):
   """Simple test to check UD encoding and decoding correctness.
-  For python-style indexing (0 <= i < N, similarly for j)."""
+  For Fortran-style indexing (1 <= i <= N, similarly for j)."""
   from numpy import sqrt
   ok = True
   for j in xrange(1,N+1):
