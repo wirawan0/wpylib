@@ -220,6 +220,15 @@ class fortran_bin_file(object):
 
     self.write_vals(*vals, **opts)
 
+  def peek_next_rec_len(self):
+    """Fetches the length of the next record, while preserving
+    the position of the file read pointer.
+    """
+    filepos = self.F.tell()
+    reclen = numpy.fromfile(self.F, self.record_marker_type, 1)
+    self.F.seek(filepos)
+    return reclen[0]
+
 
 def array_major_dim(arr):
   """Tests whether a numpy array is column or row major.
