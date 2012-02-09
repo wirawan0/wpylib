@@ -266,6 +266,7 @@ class Parameters(dict):
     rslt = self._copy_()
     rslt._update_(srcdict)
     return rslt
+  __or__ = __add__
   def _create_(self, *defaults, **_options_):
     """Creates a new Parameters() object for standardized function-level
     parameter lookup.
