@@ -29,6 +29,7 @@ import numpy
 
 from wpylib.file.file_utils import open_input_file
 from wpylib.py import make_unbound_instance_method
+import wpylib.py.im_weakref
 
 class text_input(object):
   '''Text input reader with support for UNIX-style comment marker (#) and
@@ -233,18 +234,21 @@ class text_input(object):
     for (o,v) in opts.iteritems():
       if o == "expand_errorbar":
         self.expand_errorbar(v)
-      if o == "skip_blank_lines":
+      elif o == "skip_blank_lines":
         self.skip_blank_lines = v
+      elif o == "comment_char":
+        self.comment_char = v
       else:
-        raise "ValueError", "Invalid option: %s" % (o,)
+        raise ValueError, "Invalid option: %s" % (o,)
     return self
 
   # Option for errorbar expansion:
   def expand_errorbar(self, v=True):
     '''Enables or disables errorbar expansion.'''
+    from wpylib.py.im_weakref import im_ref
     if v:
       self.opt_expand_errorbar = True
-      self.field_filtering_proc = self.expand_errorbar_hook
+      self.field_filtering_proc = im_ref(self.expand_errorbar_hook)
     else:
       self.opt_expand_errorbar = False
       self.field_filtering_proc = lambda flds : flds
