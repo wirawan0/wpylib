@@ -6,6 +6,8 @@
 #
 # Simple and dirty tools for interactive python mode
 #
+# FIXME TODO LIST:
+# - needs to detect 'python -i' presence in case of python <= 2.5.
 
 import atexit
 import inspect
@@ -96,11 +98,16 @@ def init_interactive(use_readline=True, global_ns=None):
   """Perform standard initialization for my scripts.
   Some options can be given to tweak the environment.
 
-  Under ipython
-  """
-  # ERROR: this still does not work. we need to execute the statements
-  # in the global (base) namespace, not in this function's namespace.
+  CAVEAT: this method still does not work universally yet.
+  We need to execute some of the statements in the global (top level)
+  namespace, not in this function's namespace.
+  So in general init_interactive *MUST* at this point be called from the
+  main program, not from any subroutine.
+  Otherwise, you must explicitly specify the global namespace as the
+  `global_ns` argument.
 
+  Works under ipython, `python -i' and vanilla python.
+  """
   (g, b) = get_global_namespace_(global_ns)
   int_info = detect_interactive(g)
 
