@@ -64,15 +64,23 @@ def detect_interactive(global_ns=None):
   * For ipython, see if "__IPYTHON__" is defined in the user's global
     namespace.
   * For "python -i" invocation, sys.flags.interactive will be set to True.
+    (python 2.6+ only)
   * For vanilla "python" invocation with no argument, then sys.ps1
     variable exists.
   """
+  def is_python_i():
+    # This approach only works for Python 2.6+
+    try:
+      return sys.flags.interactive
+    except:
+      return False
+
   (g, b) = get_global_namespace_(global_ns)
   if "__IPYTHON__" in g or hasattr(b, "__IPYTHON__"):
     return {
       'session': 'ipython',
     }
-  elif sys.flags.interactive:
+  elif is_python_i(): # sys.flags.interactive:
     return {
       'session': 'python -i',
     }
