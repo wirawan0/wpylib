@@ -131,14 +131,20 @@ def init_interactive(use_readline=True, global_ns=None):
   # Interestingly, under ipython the sys.argv is only "correct" to extract
   # the program name at the first loading of the script.
   # So we must capture that:
-  if int_info['session'] == 'ipython' and 'ARGV' not in g:
+  if not int_info:
+    pass
+    #print >>MSGLOG, "init_interactive: Cannot detect python session type."
+    return False
+  elif int_info['session'] == 'ipython' and 'ARGV' not in g:
     g['ARGV'] = sys.argv
     try:
       g['MYSELF'] = os.path.abspath(sys.argv[0])
     except:
       pass
+    return True
   elif int_info['session'] in ('python', 'python -i'):
     g.setdefault('MYSELF', sys.argv[0])
     g.setdefault('ARGV', sys.argv)
+    return True
 
 #print "_-helo"
