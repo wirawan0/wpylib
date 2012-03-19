@@ -40,7 +40,13 @@ class text_input(object):
   etc.
 
   To support more fancy options (e.g., rewinding), use "superize=1" when
-  creating the instance.'''
+  creating the instance.
+
+  Other valid constructor flags:
+  - expand_errorbar (default: False)
+  - comment_char (default: "#")
+  - skip_blank_lines (default: True)
+  '''
 
   def __init__(self, fname, **opts):
     if opts.get("superize", 0):
@@ -258,3 +264,46 @@ class text_input(object):
     # A hook for field_filtering_proc for expanding errorbars:
     from pyqmc.stats.errorbar import expand
     return expand(F, flatten=True)
+
+
+# Various sundry tools
+
+def head(filename, maxlines):
+  """Emulates UNIX head(1) command by reading at most `maxlines`
+  text lines.
+  It is intended for plain text files only!
+  It also supports compressed files through text_input() facility.
+  """
+  # head is easy to implement. But how about tail?
+  F = text_input(filename, skip_blank_lines=False, comment_char='\0')
+  out = []
+  try:
+    for x in xrange(maxlines):
+      out.append(F.next())
+  except StopIteration:
+    pass
+  return out
+
+
+def tail(filename, maxlines):
+  """Emulates UNIX tail(1) command by reading at most `maxlines`
+  text lines at the end of a text file.
+  It is intended for plain text files only!
+  It also supports compressed files through text_input() facility.
+
+  Warning: this algorithm is far less optimal than head() since it
+  has to read the whole file.
+  It's okay for moderately small files.
+  """
+  F = text_input(filename, skip_blank_lines=False, comment_char='\0')
+  out = []
+  lines2read = max(2*maxlines, 100)
+  try:
+    while True:
+      for x in xrange(lines2read):
+        out.append(F.next())
+      out = out[-maxlines:]
+  except StopIteration:
+    pass
+  return out[-maxlines:]
+
