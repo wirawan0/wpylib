@@ -13,6 +13,15 @@
 import sys
 import weakref
 
+def is_iterable(x):
+  """Checks if an object x is iterable.
+  It checks only for the presence of __iter__, which must exist for
+  container objects.
+  Note: we do not consider non-containers such as string and unicode as
+  `iterable'; this behavior is intended.
+  """
+  return hasattr(x, "__iter__")
+
 def ifelse(cond, trueval, *args):
   """An alternative to python's own ternary operator, but with multiple
   conditions to test (like chained if-else-if-else... which is found in
