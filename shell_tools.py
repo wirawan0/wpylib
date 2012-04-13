@@ -186,7 +186,7 @@ else:
     This is my customary shortcut for backtick operator.
     The result is either a single string (if split==False) or a list of strings
     with EOLs removed (if split==True)."""
-    if shell or isinstance(args, str):
+    if shell or isinstance(args, basestring):
       # BEWARE: args should be a string in this case
       p = os.popen(args, "r")
     else:
@@ -203,7 +203,7 @@ else:
     """Executes a shell command, piping in the stdin from python for driving.
     This is the reverse of pipe_out.
     Commands are given through file-like write() or writelines() methods."""
-    if shell or isinstance(args, str):
+    if shell or isinstance(args, basestring):
       # BEWARE: args should be a string in this case
       p = os.popen(args, "w")
     else:

@@ -86,7 +86,7 @@ def glob_files(filespec):
   When globbing is done, the result is sorted for predictability.'''
   if getattr(filespec, "__iter__", False):
     return filespec # no re-sorting
-  elif isinstance(filespec, str):
+  elif isinstance(filespec, basestring):
     return sorted(glob.glob(filespec))
   else:
     raise ValueError, "Don't know how to glob for an object of " + type(filespec)

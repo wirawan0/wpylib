@@ -48,7 +48,7 @@ class file_table(object):
   def __init__(self, src_name, table_name='filedb', extra_fields=[]):
     self.src_name = src_name
     self.table_name = table_name
-    if isinstance(src_name, str): # os.path.isfile(src_name):
+    if isinstance(src_name, basestring): # os.path.isfile(src_name):
       self.db = sqlite3.connect(src_name)
       self.dbc = self.db.cursor()
     elif isinstance(src_name, sqlite3.Connection):

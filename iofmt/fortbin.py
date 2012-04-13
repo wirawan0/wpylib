@@ -159,7 +159,7 @@ class fortran_bin_file(object):
         v2 = self.default_float(v)
         # FIXME: check for overflow error like in integer conversion above
         vals.append(v2)
-      elif isinstance(v, str):
+      elif isinstance(v, basestring):
         v2 = self.default_str(v)
         vals.append(v2)
       elif "itemsize" in dir(v):
@@ -199,7 +199,7 @@ class fortran_bin_file(object):
 
     vals = []
     for f in fields:
-      if isinstance(f, str):
+      if isinstance(f, basestring):
         vals.append(getval(src, f))
       elif isinstance(f, (list, tuple)):
         v = getval(src, f[0])

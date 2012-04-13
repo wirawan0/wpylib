@@ -62,7 +62,7 @@ class result_base(dict):
     if isinstance(src, dict):
       self.clear()
       self.update(src)
-    elif isinstance(src, str):
+    elif isinstance(src, basestring):
       # WARNING: Awaiting future definition of parse_text_file_().
       # This must be specified in the derived class.
       self.parse_file_(src)

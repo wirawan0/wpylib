@@ -119,7 +119,7 @@ class text_input(object):
     regular expression object.'''
 
     if regex:
-      if isinstance(regex, str):
+      if isinstance(regex, basestring):
         Regexp = re.compile(regex)
       else:
         Regexp = regex
