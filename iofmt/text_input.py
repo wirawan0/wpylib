@@ -27,9 +27,24 @@ This module is part of wpylib project.
 import re
 import numpy
 
+from wpylib.sugar import zip_gen
 from wpylib.file.file_utils import open_input_file
 from wpylib.py import make_unbound_instance_method
 import wpylib.py.im_weakref
+
+def make_match_proc(match):
+  """Make matching procedure: simple string becomes regexp,
+  regexp remains regexp, and other callable object is passed as is."""
+  if isinstance(match, basestring):
+    Regexp = re.compile(match)
+    match_proc = lambda x: Regexp.search(x)
+  elif hasattr(getattr(match, "search", None), "__call__"):
+    Regexp = match
+    match_proc = lambda x: Regexp.search(x)
+  else:
+    match_proc = match
+  return match_proc
+
 
 class text_input(object):
   '''Text input reader with support for UNIX-style comment marker (#) and
@@ -167,6 +182,7 @@ class text_input(object):
     If the tuple contains the third field, it is used as the name of the field;
     otherwise the fields are named f0, f1, f2, ....
 
+    Preliminary ability to read in complex data has been added!
     Complex data (floating-point only) must be specified as a tuple of two columns
     containing the real and imaginary data, like this:
        ((2, 3), complex, 'ampl')
@@ -177,8 +193,13 @@ class text_input(object):
     Additional keyword options:
     * deftype: default datatype
     * maxcount: maximum number of records to be read
+    * end_line_match: a regular expression or test subroutine accepting a
+      single argument (i.e. the text line) marking the end boundary of the list
+      to be read (i.e. one line past the list contents)
+    * last_line_match: a regular expression or test subroutine accepting a
+      single argument (i.e. the text line) marking the last element of the list
+      to be read
 
-    TODO: Needs ability to read in complex data.
     """
     deftype = kwd.get("deftype", float)
 
@@ -226,7 +247,28 @@ class text_input(object):
     cols = reg.cols
     flds = reg.flds
     get_fields = lambda vals : tuple([ filt(vals,col) for (filt,col) in cols ])
+
     if "maxcount" in kwd:
+      src_iter = zip_gen(xrange(kwd['maxcount']),self)
+    else:
+      src_iter = enumerate(self)
+    # FIXME below: zip() evaluates the function before the loop, thus may
+    # eat a lot of memory.
+    if 'end_line_match' in kwd:
+      rslt = []
+      match = make_match_proc(kwd['end_line_match'])
+      for (c,vals) in src_iter:
+        if match(vals):
+          break
+        rslt.append(get_fields(vals.split()))
+    elif 'last_line_match' in kwd:
+      rslt = []
+      match = make_match_proc(kwd['end_line_match'])
+      for (c,vals) in src_iter:
+        rslt.append(get_fields(vals.split()))
+        if match(vals):
+          break
+    elif "maxcount" in kwd:
       #print "hello"
       rslt = [ get_fields(vals.split()) for (c,vals) in zip(xrange(kwd['maxcount']),self) ]
     else:
