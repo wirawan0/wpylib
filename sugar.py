@@ -93,6 +93,18 @@ def list_join(*L):
   return r
 
 
+def zip_gen(*L):
+  """Generator version of the built-in zip() function.
+  Used so that the all the loop iterations are not invoked before
+  the main `for' statement is invoked (e.g. if memory is a concern
+  when generating the list--this method does not generate any list).
+  Performance could be slightly slower than the original zip function,
+  though."""
+  L_iters = [ i.__iter__() for i in L ]
+  while True:
+    yield tuple([ L1.next() for L1 in L_iters ])
+
+
 class ranges_type:
   """This class is to provide dirty magic to specify piecewice slices
   of one-dimensional ranges.
