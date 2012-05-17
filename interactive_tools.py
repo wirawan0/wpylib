@@ -155,3 +155,21 @@ def init_interactive(use_readline=True, global_ns=None):
     return True
 
 #print "_-helo"
+
+
+class printstr:
+  """A hack to record printout in a logged interactive python session
+  (I had logged ipython in mind, but other similar framework can use
+  this as well).
+  We intentionally use __repr__ to print the string.
+
+  Usage:
+     printstr(<python object>)
+  """
+  def __init__(self, obj):
+    self.str = str(obj)
+  def __str__(self):
+    return self.str
+  def __repr__(self):
+    return self.str
+
