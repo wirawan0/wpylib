@@ -40,20 +40,21 @@ def make_matrix(Str, debug=None):
   if debug: print rslt
   return numpy.array(rslt)
 
-def vector_str(M, fmt="%22.15g", V=False):
+def vector_str(M, fmt="%22.15g", V=False, prefix="", suffix=""):
   if len(M.shape) != 1:
     raise ValueError, "Wrong shape: expecting a one-dimensional array."
   if V:
-    return "\n".join([ fmt % m for m in M ])
+    return prefix + (suffix + "\n" + prefix).join([ fmt % m for m in M ]) + suffix
   else:
-    return " ".join([ fmt % m for m in M ])
+    return prefix + " ".join([ fmt % m for m in M ]) + suffix
 
-def matrix_str(M, fmt="%22.15g"):
+def matrix_str(M, fmt="%22.15g", prefix="", suffix=""):
+  linesep = suffix + "\n" + prefix
   if isinstance(M, numpy.matrix):
     M = numpy.asarray(M)
   if len(M.shape) != 2:
     raise ValueError, "Wrong shape: expecting a two-dimensional array."
-  return "\n".join([ " ".join([ fmt % c for c in R ] ) for R in M ])
+  return prefix + linesep.join([ " ".join([ fmt % c for c in R ]) for R in M ]) + suffix
 
 
 def str_unindent(S, amount=None):
@@ -66,7 +67,7 @@ def str_unindent(S, amount=None):
     nindent = amount
     indent_whsp = " " * nindent
 
-  strs = S.split("\n")
+  strs = S.splitlines()
   rslt = []
   for s in strs:
     if s.strip() != "":
