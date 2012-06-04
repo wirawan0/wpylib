@@ -76,6 +76,32 @@ if has_paramiko:
       self.sftp.utime(remotepath, (stats.st_atime, stats.st_mtime))
       self.sftp.chmod(remotepath, stats.st_mode)
 
+    # os.path-like functions
+
+    def _is_test(self, path, test_proc):
+      # Credit:
+      # http://stackoverflow.com/questions/6674862/recursive-directory-download-with-paramiko
+      #from stat import S_ISDIR
+      try:
+        return test_proc(self.sftp.stat(path).st_mode)
+      except IOError:
+        return False
+
+    def isdir(self, path):
+      return self._is_test(path, stat.S_ISDIR)
+
+    def islink(self, path):
+      """This function is not reliable, I found.
+      In my test cases, softlinks were not be detected correctly.
+      This might have to do with softlink support in the SFTP server,
+      but most likely it was the limitation of paramiko itself.
+      CAVEAT EMPTOR.
+      """
+      return self._is_test(path, stat.S_ISLNK)
+
+    def isfile(self, path):
+      return self._is_test(path, stat.S_ISREG)
+
     def close(self):
       self.sftp.close()
 
