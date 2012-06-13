@@ -164,11 +164,11 @@ class text_output(object):
   # self.out is yet another text_output instance.
   # But beware of possible method polymorphism if you do this. (!!!)
   def _write(self, s):
-    if self.out: self.out.write(s)
+    if self.out != None: self.out.write(s)
   def _flush(self):
-    if self.out: self.out.flush()
+    if self.out != None: self.out.flush()
   def _write_flush(self, s):
-    if self.out:
+    if self.out != None:
       self.out.write(s)
       self.out.flush()
   # The logger itself is a file-like object, too:
