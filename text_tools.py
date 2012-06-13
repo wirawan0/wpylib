@@ -140,7 +140,8 @@ def str_grep(S, strs):
 def str_igrep(S, strs):
   """Returns a list of the indices of the strings wherein the substring S
   is found."""
-  return [i for (s,i) in zip(strs,xrange(len(strs))) if s.find(S) >= 0]
+  return [i for (i,s) in enumerate(strs) if s.find(S) >= 0]
+  #return [i for (s,i) in zip(strs,xrange(len(strs))) if s.find(S) >= 0]
 
 
 def slice_str(s):
