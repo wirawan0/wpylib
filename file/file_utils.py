@@ -24,6 +24,7 @@ import bz2
 import glob
 import gzip
 import os
+import os.path
 try:
   import subprocess
   has_subprocess = True
@@ -80,6 +81,11 @@ def open_input_file(fname, superize=0):
 
 # Miscellaneous functions
 
+def file_exists_nonempty(fn):
+  return os.path.isfile(fn) and os.stat(fn).st_size > 0
+
+
+
 def glob_files(filespec):
   '''Processes a glob string, or does nothing (pass-on only) if an iterable object
   (e.g. list or tuple) is already given.
@@ -101,8 +107,9 @@ def path_search(*specs, **opts):
   * pathsep="/"  -- path separator
   * filetest=os.path.isfile  -- filetest operator to be used
   * raise_error=False  -- do we want to raise an exception if the file
-    is not found?
+    is not found after all possible searches?
   '''
+  path_join = os.path.join
   # FIXME: this can be extremely expensive!
   xspecs = []
   xlen = []
