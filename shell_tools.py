@@ -26,6 +26,18 @@ def mcd(subdir):
   mkdir("-p", subdir)
   os.chdir(subdir)
 
+def dirname2(path):
+  """Returns the directory part of a path.
+  The difference from os.path.dirname is that if the directory
+  part is empty, it is converted to '.' (the current directory)."""
+  d = os.path.dirname(path)
+  if d == '': d = '.'
+  return d
+
+def file_exists_nonempty(path):
+  """Determines whether a given path is a regular file of
+  nonzero size."""
+  return os.path.isfile(path) and os.stat(path).st_size > 0
 
 def provide_link(dest, src):
   """Checks if file `dest' exists. If it does not, provide for it by means

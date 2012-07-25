@@ -81,10 +81,6 @@ def open_input_file(fname, superize=0):
 
 # Miscellaneous functions
 
-def file_exists_nonempty(fn):
-  return os.path.isfile(fn) and os.stat(fn).st_size > 0
-
-
 
 def glob_files(filespec):
   '''Processes a glob string, or does nothing (pass-on only) if an iterable object

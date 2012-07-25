@@ -42,3 +42,10 @@ def epsilon(dtype):
     small2 = small
     small = dtype(small / 2)
   return small2
+
+
+def roundup(value, unit):
+  """Rounds up a value to the next integer multiple of a unit."""
+  return numpy.ceil(float(value) / float(unit)) * unit
+
+
