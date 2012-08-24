@@ -75,12 +75,30 @@ so that the output from sys.stdout is recorded to an ipython log file).
       #print >> sys.stderr, "calling proc"
       rslt2 = proc(*args, **argkw)
       #print >> sys.stderr, "end proc"
-    finally:
+    except:
       #print >> sys.stderr, "finally proc"
       if needs_stdout_redir:
-        rslt1 = temp_stdout.getvalue()
         sys.stdout = StdoutCapture._StdoutCapture_save_stdout
         delattr(StdoutCapture, "_StdoutCapture_save_stdout")
+        rslt1 = temp_stdout.getvalue()
+        temp_stdout.close()
+
+        # clean up the stdout proxy:
+        if my_stdout_proxy_created:
+          # delete it so it won't be touched later
+          delattr(self, "my_stdout_proxy")
+        if rslt1:
+          print >> sys.stderr, rslt1
+        print >> sys.stderr, "Exception caught while capturing stdout"
+        raise
+
+    else:
+      #print >> sys.stderr, "finally proc"
+      if needs_stdout_redir:
+        sys.stdout = StdoutCapture._StdoutCapture_save_stdout
+        delattr(StdoutCapture, "_StdoutCapture_save_stdout")
+        print >> sys.stderr, temp_stdout.tell()
+        rslt1 = temp_stdout.getvalue()
         #print >> sys.stderr, "stdout redirected back"
         #sys.stdout.flush()
         temp_stdout.close()
