@@ -49,3 +49,39 @@ def roundup(value, unit):
   return numpy.ceil(float(value) / float(unit)) * unit
 
 
+def choose(n,r):
+  """Computes n! / {r! (n-r)!} . Note that the following condition must
+  always be fulfilled:
+      1 <= n
+      1 <= r <= n
+  Otherwise the result is not predictable!
+
+  Optimization: To minimize the # of multiplications and divisions, we
+  rewrite the expression as
+
+        n!      n(n-1)...(n-r+1)
+    --------- = ----------------
+     r!(n-r)!          r!
+
+  To avoid multiplication overflow as much as possible, we will evaluate
+  in the following STRICT order, from left to right:
+
+    n / 1 * (n-1) / 2 * (n-2) / 3 * ... * (n-r+1) / r
+
+  We can show that integer arithmatic operated in this order is exact
+  (i.e. no roundoff error).
+
+  Note: this implementation is based on my C++ cp.inc library.
+  For other implementations, see:
+  http://stackoverflow.com/questions/3025162/statistics-combinations-in-python
+
+  Published in stack overflow, see URL above.
+  """
+  assert n >= 0
+  assert 0 <= r <= n
+
+  c = 1L
+  denom = 1
+  for (num,denom) in zip(xrange(n,n-r,-1), xrange(1,r+1,1)):
+    c = (c * num) // denom
+  return c
