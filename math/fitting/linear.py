@@ -47,9 +47,20 @@ def linregr2d_SZ(x, y, sigma=None):
   detinv = 1.0 / (d11*d22 - d12*d21)
   a = (e1*d22 - e2*d12) * detinv
   b = (e2*d11 - e1*d21) * detinv
+
+  # Shiwei's old method of computing the uncertainty of the
+  # y-intersect (sigma_a):
   varsum = sum((xx*d11 - d12)**2 * ww)
   var = varsum * detinv**2
   sigma = sqrt(var)
+
+  # New method based on NR chapter: sqrt(sigma_a2) must give
+  # identical result to sigma or else something is screwy!
+  sigma_a2 = d12 * (-detinv)
+  sigma_b2 = d21 * (-detinv)
+
+  print sigma_a2
+  print sigma_b2
 
   return fit_result(
     fit_method='linregr2d_SZ',
@@ -57,6 +68,8 @@ def linregr2d_SZ(x, y, sigma=None):
     a=a,
     b=b,
     sigma=sigma,
+    sigma_a=sqrt(sigma_a2),
+    sigma_b=sqrt(sigma_b2),
   )
 
 
@@ -70,7 +83,9 @@ def Test_1():
        'b': -0.82241012516149792,
        'fit_method': 'linregr2d_SZ',
        'fit_model': 'linear',
-       'sigma': 0.00048320905704467775}
+       'sigma': 0.00048320905704467775,
+       'sigma_a': 0.00048320905704467786,
+       'sigma_b': 0.080335909573397646}
 
   My wlinreg tool (via 'dtextrap' shell script alias gives:
 
@@ -88,6 +103,7 @@ def Test_1():
       a =      -1392.31823569246 +/-   0.000460341146124978 = -1392.31824(46)
       b =     -0.822098515674071 +/-     0.0803118207916705 = -0.822(80)
 
+  which is close enough for this purpose!
   """
   from wpylib.text_tools import make_matrix as mtx
   M = mtx("""
