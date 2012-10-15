@@ -118,3 +118,36 @@ def Test_1():
   rslt = linregr2d_SZ(x,y,dy)
   print rslt
   return rslt
+
+
+def Test_2():
+  """Testcase 2.
+  Similar to testcase 1 but with all uncertainties == 1.
+
+      >>> wpylib.math.fitting.linear.Test_2()
+      polyfit result = -0.809999999961 -1392.318265
+      {'a': -1392.3182649999987,
+       'b': -0.81000000006627304,
+       'fit_method': 'linregr2d_SZ',
+       'fit_model': 'linear',
+       'sigma': 1.2247448713915881,
+       'sigma_a': 1.2247448713915885,
+       'sigma_b': 185.16401995451022}
+
+  This is to be compared with the polyfit output.
+  """
+  from wpylib.text_tools import make_matrix as mtx
+  M = mtx("""
+  # Source: Co+ QMC/CAS(8,11)d26 cc-pwCVQZ-DK result dated 20121015
+   0.01    -1392.32619 1.0
+   0.005   -1392.32284 1.0
+   0.0025  -1392.31994 1.0
+  """)
+  x = M[:,0]
+  y = M[:,1]
+  dy = M[:,2]
+  rslt = linregr2d_SZ(x,y,dy)
+
+  polyfit_result = numpy.polyfit(x,y,deg=1,full=False)
+  print "polyfit result = ", polyfit_result[0], polyfit_result[1]
+  return rslt
