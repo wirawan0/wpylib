@@ -232,9 +232,7 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   if outfmt == 1:
     return rslt[0]
   else:
-    rec = fit_result()
-    for (k, v) in zip(keys, rslt):
-      rec[k] = v
+    rec = fit_result(dict(zip(keys, rslt)))
     rec['chi_square'] = chi_sqr
     rec['fit_method'] = method
     return rec
