@@ -151,3 +151,33 @@ def Test_2():
   polyfit_result = numpy.polyfit(x,y,deg=1,full=False)
   print "polyfit result = ", polyfit_result[0], polyfit_result[1]
   return rslt
+
+
+def Test_3():
+  """Testcase 3.
+  Feed of test from 1/x**3 extrapolation, Ca+4H2 Z=2.3 cc-pCV[TQ5]Z basis
+
+      >>> wpylib.math.fitting.linear.Test_3()
+      {'a': -0.92257959784330612,
+       'b': 10.193612525866801,
+       'fit_method': 'linregr2d_SZ',
+       'fit_model': 'linear',
+       'sigma': 0.0010352279401853368,
+       'sigma_a': 0.0010352279401853377,
+       'sigma_b': 0.036555525396641586}
+
+  """
+  from wpylib.text_tools import make_matrix as mtx
+  M = mtx("""
+  # Source: Co+ QMC/CAS(8,11)d26 cc-pwCVQZ-DK result dated 20121015
+  # Groff notebook 1.90, table "testZ23 geometry: Z=2.3 dHH=0.7682", near
+  # "/// begin extra (for paper)"
+   0.03703704 -0.54533  0.00061
+   0.015625   -0.76167  0.00074
+   0.008      -0.8442   0.0012
+  """)
+  x = M[:,0]
+  y = M[:,1]
+  dy = M[:,2]
+  rslt = linregr2d_SZ(x,y,dy)
+  return rslt
