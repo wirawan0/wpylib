@@ -59,8 +59,8 @@ def linregr2d_SZ(x, y, sigma=None):
   sigma_a2 = d12 * (-detinv)
   sigma_b2 = d21 * (-detinv)
 
-  print sigma_a2
-  print sigma_b2
+  #print sigma_a2
+  #print sigma_b2
 
   return fit_result(
     fit_method='linregr2d_SZ',
