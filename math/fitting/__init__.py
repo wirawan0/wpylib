@@ -13,6 +13,7 @@
 
 import numpy
 import scipy.optimize
+from wpylib.db.result_base import result_base
 
 last_fit_rslt = None
 last_chi_sqr = None
@@ -117,7 +118,7 @@ class Poly_order4(Poly_base):
                  for i in xrange(len(x)) ])
 
 
-class fit_result(dict):
+class fit_result(result_base):
   pass
 
 def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
@@ -235,5 +236,6 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     for (k, v) in zip(keys, rslt):
       rec[k] = v
     rec['chi_square'] = chi_sqr
+    rec['fit_method'] = method
     return rec
 
