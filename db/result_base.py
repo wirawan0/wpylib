@@ -57,6 +57,9 @@ class result_base(dict):
     * a dict: then the values are copied over (shallow copy) to this
       object.
     * a string containing filename: then the virtual parse_file_ method
+      is invoked.
+    Other unrecognized keyword arguments will be stored in the
+    object's dictionary as part of the result.
     """
     src = _src_
     if isinstance(src, dict):
