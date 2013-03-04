@@ -89,6 +89,8 @@ class Parameters(dict):
       return dict.__contains__(self.ref(), key)
     def __getitem__(self, key):
       return dict.__getitem__(self.ref(), key)
+    def __iter__(self):
+      return dict.__iter__(self.ref())
 
   def __init__(self, *_override_dicts_, **_opts_):
     """
@@ -251,6 +253,34 @@ class Parameters(dict):
       return self[key]
     except KeyError:
       return default
+
+  def _all_keys_(self, sort=True):
+    """Returns a list of all keys containing in the parameter space.
+
+    Warning: This can be an expensive operation!"""
+    K = set()
+    _list_ = self.__dict__["_list_"]
+    for D in _list_:
+      try:
+        K.update(D.keys())
+      except:
+        K.update(D.ref().keys())
+    K_list = [ k for k in K ]
+    if sort:
+      K_list.sort()
+    return K_list
+
+  def _flatten_(self, sort=True):
+    """Returns a flatten dict of all the (most overriding) key-value pairs
+    in the parameter space.
+
+    Warning: This can be an expensive operation!"""
+    K = dict()
+    _list_ = self.__dict__["_list_"]
+    for D in _list_[::-1]:
+      K.update([ (k,D[k]) for k in D ])
+    return K
+
   def _update_(self, srcdict):
     """Updates the most overriding parameters with key-value pairs from
     srcdict.
