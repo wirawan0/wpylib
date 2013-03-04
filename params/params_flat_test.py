@@ -55,6 +55,58 @@ def test2b(**_opts_):
   print "new deltau = ", p.deltau
 
 
+def test3(**_opts_):
+  p = params(global_defaults)
+  p.nbasis = 399
+
+  print "test3()"
+  print "self-defined values = ", p
+  print "nbasis = ", p.nbasis   # gives 327. Changes to local vars won't alter anything.
+  print "npart = ", p.npart
+  print "deltau = ", p.deltau
+
+  # Append new lookup
+  dict2 = dict(
+    nblk = 37,
+    target = 'Titan',
+  )
+  dict3 = dict(
+    nsppol = 2,
+    target = '7745x',
+  )
+  p._append_(dict2, dict3)
+  print "target = ", p.target
+  print "nblk = ", p.nblk
+  print "nsppol = ", p.nsppol
+
+
+def test4(**_opts_):
+  p = params(global_defaults)
+  p.nbasis = 399
+
+  print "test3()"
+  print "self-defined values = ", p
+
+  # Append new lookup
+  dict2 = dict(
+    nblk = 37,
+    nbasis = 9,
+    target = 'Titan',
+  )
+  dict3 = dict(
+    nsppol = 2,
+    target = '7745x',
+  )
+  p._prepend_(dict3, dict2, override_me=1)
+  print p._list_
+  print "nbasis = ", p.nbasis   # gives 327. Changes to local vars won't alter anything.
+  print "npart = ", p.npart
+  print "deltau = ", p.deltau
+  print "target = ", p.target
+  print "nblk = ", p.nblk
+  print "nsppol = ", p.nsppol
+
+
 def dump_objects():
   """See what's in each dicts.
   """
@@ -65,3 +117,5 @@ if __name__ == "__main__":
   test1()
   test2()
   test2b()
+  test3()
+  test4()
