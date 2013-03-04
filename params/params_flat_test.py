@@ -56,6 +56,7 @@ def test2b(**_opts_):
 
 
 def test3(**_opts_):
+  """Testing _append_() method."""
   p = params(global_defaults)
   p.nbasis = 399
 
@@ -81,10 +82,11 @@ def test3(**_opts_):
 
 
 def test4(**_opts_):
+  """Testing _prepend_() method."""
   p = params(global_defaults)
   p.nbasis = 399
 
-  print "test3()"
+  print "test4()"
   print "self-defined values = ", p
 
   # Append new lookup
@@ -106,6 +108,39 @@ def test4(**_opts_):
   print "nblk = ", p.nblk
   print "nsppol = ", p.nsppol
 
+def test5(**_opts_):
+  """Testing _all_keys_() method."""
+  p = params(global_defaults)
+  p.nbasis = 399
+
+  print "test5()"
+  print "self-defined values = ", p
+
+  # Append new lookup
+  dict1 = dict(
+    nhgss = 300,
+    Etrial = -38.948241,
+  )
+  dict2 = dict(
+    nblk = 37,
+    nbasis = 9,
+    target = 'Titan',
+  )
+  dict3 = dict(
+    nsppol = 2,
+    target = '7745x',
+  )
+  p._append_(dict1)
+  p._prepend_(dict3, dict2, override_me=0)
+  print p._list_
+  print "all keys: ", p._all_keys_()
+  print "nbasis = ", p.nbasis   # gives 327. Changes to local vars won't alter anything.
+  print "npart = ", p.npart
+  print "deltau = ", p.deltau
+  print "target = ", p.target
+  print "nblk = ", p.nblk
+  print "nsppol = ", p.nsppol
+
 
 def dump_objects():
   """See what's in each dicts.
@@ -117,5 +152,7 @@ if __name__ == "__main__":
   test1()
   test2()
   test2b()
+  test5()
+  exit()
   test3()
   test4()
