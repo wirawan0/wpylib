@@ -260,6 +260,21 @@ class Parameters(dict):
     updated into the "self" dict.
     """
     dict.update(self, srcdict)
+  def _append_(self, *dicts):
+    """Appends dictionary search path to this Parameters object.
+    """
+    self.__dict__["_list_"] += list(dicts)
+  def _prepend_(self, *dicts, **_options_):
+    """Prepends dictionary search path to this Parameters object.
+    This will not override the first dict, which is its own dictionary object.
+    If you really want to do that (BEWARE, know what you are doing!),
+    you will have to specify override_me=True in the argument.
+    """
+    _list_ = self.__dict__["_list_"]
+    if not _options_.get("override_me", False):
+      self.__dict__["_list_"] = [ _list_[0] ] + list(dicts) + _list_[1:]
+    else:
+      self.__dict__["_list_"] = list(dicts) + _list_
   def __add__(self, srcdict):
     """Returns a copy of the Parameters() object, with the most-overriding
     parameters updated from the contents of srcdict."""
