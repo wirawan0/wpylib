@@ -18,5 +18,22 @@ import time
 
 
 def date8():
+  """Returns a standard 8-digit representation of the current date."""
   return time.strftime("%Y%m%d")
+
+def time_diff(time1, time2):
+  """Returns the time difference (time1 - time2) in seconds."""
+  from time import mktime
+  return mktime(time1) - mktime(time2)
+
+def shift_time(t, dt, localtime=True):
+  """Shifts a time data by an amount in dt (specified in seconds)."""
+  if isinstance(t, time.struct_time):
+    t1 = time.mktime(t) + dt
+  else:
+    t1 = t + dt
+  if localtime:
+    return time.localtime(t1)
+  else:
+    return time.gmtime(t1)
 
