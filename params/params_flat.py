@@ -33,8 +33,8 @@ class Parameters(dict):
   This, hopefully, gets rid of kitchen-sink parameter passing, at least from
   programmer's point of view.
 
-  WARNING: This object is derived from python dict with ALL method names removed,
-  so as to avoid collosion of these names with user-defined parameters with the
+  WARNING: This object is derived from python dict with ALL method names removed, (#FIXME# Not true yet)
+  so as to avoid collision of these names with user-defined parameters with the
   same name.
   Names reserved by this class begin and end with an underscore.
   Names reserved by python begin and end with two underscores.
@@ -59,6 +59,8 @@ class Parameters(dict):
     a = Parameters(...)
     updates = {'nblk': 7, 'nbasis': 32}
     a += updates
+    #FIXME# ^^^ right now this does not operate in-place, but
+    #FIXME# returns a new Parameters object, which may not be desirable
 
   or, to call a function with a combination of parameters:
 
@@ -138,18 +140,10 @@ class Parameters(dict):
       function argument list (default: `_opts_').
     * _userparam_ = the name of the explicitly defined user-defined parameter
       (of a dict type) in the function argument list (default: `_p').
-    * _localvars_ = set to true to include function local variables in the
-      lookup chain. Default is False because it can be very confusing!
-      We just have no control on what local variables would be involved
-      in a function and the sheer potential of creating vars with the same name
-      as the value we want to look up---all will open up to infinite possibility
-      of surprises.
-      At present, the `_localvars_' attribute will not be propagated to the child
-      Parameters objects created by this parent object.
-      Caveat: only variables defined till the point of calling of the method
-      _create_() below will be searched in the lookup process.
-      Values defined or updated later will not be reflected in the lookup process.
-      (See params_flat_test.py, test2 and test2b routines.)
+    * _localvars_ = set to true to include function local variables by their names
+      in the lookup chain of the new Parameters object created by _create_()
+      method below.
+      See the documentation in _create_() method for cautionary notes.
     """
 
     # Remove standard dict procedure names not beginning with "_":
@@ -159,6 +153,7 @@ class Parameters(dict):
     # Store the user-defined overrides in its own container:
     dict.clear(self)
     if _opts_.get('_flatten_', False):
+      #FIXME# if p is a Parameters object, then we must recursively flatten it too
       for p in _override_dicts_:
         dict.update(self, p)
       dict.update(self, _opts_)
@@ -180,7 +175,7 @@ class Parameters(dict):
       #if badkw in self: del self[badkw] -- recursive!!!
       if dict.__contains__(self,badkw): del self[badkw]
   def _copy_(self):
-    """Returns a copy of the Parameters() object."""
+    """Returns a (shallow) copy of the Parameters() object."""
     return Parameters(_no_null_=self._no_null_,
                       _kwparam_=self._kwparam_,
                       _userparam_=self._userparam_,
@@ -278,6 +273,7 @@ class Parameters(dict):
     K = dict()
     _list_ = self.__dict__["_list_"]
     for D in _list_[::-1]:
+      #FIXME# if D is a Parameters object then we must recursively flatten it too
       K.update([ (k,D[k]) for k in D ])
     return K
 
@@ -308,22 +304,27 @@ class Parameters(dict):
   def __add__(self, srcdict):
     """Returns a copy of the Parameters() object, with the most-overriding
     parameters updated from the contents of srcdict."""
+    # FIXME: this operation looks counterintuitive; may want to consider
+    # using "<<" alternate operator naming if we ever, ever use this.
+    # (And similarly, "<<=".
     rslt = self._copy_()
     rslt._update_(srcdict)
     return rslt
-  __or__ = __add__
+  __or__ = __add__  # DON'T!
   def _create_(self, *defaults, **_options_):
     """Creates a new Parameters() object for standardized function-level
     parameter lookup.
-    This routine *must* be called by the function where we want to access these
-    parameters, and where some parameters are to be overriden via function
+    This routine *must* be called by the function where we want to use these
+    parameters, and their values can be overridden via function
     arguments, etc.
 
-    The order of lookup is definite:
+    The order of the lookup is deterministic:
     * local variables of the calling subroutine will take precedence
       (if _localvars_ is set to True)
-    * the excess keyword-based parameters, 
-    * user-supplied Parameters-like object, which is 
+    * the excess keyword-based parameters (given by pre-set variable name,
+      which by default is "_opts_")
+    * user-supplied Parameters-like object, which by default is the
+      keyword-based parameter "_p")
     * the dicts (passed in the `defaults' unnamed parameter list) is searched
       *last*.
       I suggest that this is used only as a last-effort safety net.
@@ -355,6 +356,21 @@ class Parameters(dict):
       - _localvars_ (boolean) = whether to include the local vars in the
         lookup chain. Default: None; refer back to the object's
         _localvars_ attribute.
+
+    Cautions for using `_localvar_` option:
+    1) The default is False because it can be very confusing!
+       We just have no control on what local variables would be involved
+       in a function and the sheer potential of creating vars with the same name
+       as the value we want to look up---all will open up to infinite possibility
+       of surprises.
+    2) At present, the value of the `_localvars_' option will not be
+       propagated to the Parameters objects created by this parent
+       object.
+    3) Only local variables defined up to the calling of the _create_() method
+       will be captured.
+       Any new local variables or update to the variable values will not be
+       reflected in the Parameters object created by this method.
+       (See params_flat_test.py, test2 and test2b routines.)
     """
     # Look up the stack of the calling function in order to retrieve its
     # local variables
