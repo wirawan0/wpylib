@@ -28,6 +28,7 @@ def test1():
 
 
 def test2(**_opts_):
+  """Testing _localvars_ option."""
   p = global_defaults._create_(_localvars_=1)
   nbasis = 327
 
@@ -41,6 +42,7 @@ def test2(**_opts_):
 
 
 def test2b(**_opts_):
+  """Testing _localvars_ option."""
   nbasis = 327
   p = global_defaults._create_(_localvars_=1)
 
@@ -142,6 +144,42 @@ def test5(**_opts_):
   print "nsppol = ", p.nsppol
 
 
+def test6():
+  """Tests active method."""
+  from wpylib.text_tools import str_snippet as snippet
+  from wpylib.params.params_flat import ActiveReadValue as Act
+  defaults = {
+    'nbasis': 320,
+    'npart': 37,
+    'deltau': 0.025,
+  }
+  print "test6()"
+  p = params(defaults, nbasis=332)
+  p.input_template = Act(lambda P: snippet("""\
+  input = {
+    nbasis = %(nbasis)d
+    npart = %(npart)d
+    deltau = %(deltau)s
+  };
+  code = {
+    %(code_template)s
+  };
+  """) % P)
+  p.code_template = Act(lambda P: snippet("""\
+    for (i = 1; %(nbasis)d; ++i) {
+      print i, %(deltau)g
+    }
+  """) % P)
+  print "\nInput template 1:"
+  print p.input_template
+
+  p.nbasis = 327
+  print "\nInput template 2 after updating nbasis:"
+  print p.input_template
+
+  print "\nHere is the generator script:\n*%(input_template)s*" % p._create_(deltau=2.775)
+
+
 def dump_objects():
   """See what's in each dicts.
   """
@@ -149,6 +187,8 @@ def dump_objects():
 
 
 if __name__ == "__main__":
+  test6()
+  exit()
   test1()
   test2()
   test2b()
