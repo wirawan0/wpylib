@@ -22,6 +22,35 @@ whenever the set of parameters is passed from one subroutine to another.
 
 """
 
+class ActiveReadValue(object):
+  """Special class to mark a Parameters' member `active', i.e., executable.
+  When this member is accessed in a `read' manner, the function will be
+  executed with the containing Parameters object as the sole argument.
+  When this member is accessed in a `write' manner, however, the usual
+  replacement of value will take place.
+
+  This is useful for macro processing, automatically computed values, etc.
+
+  Example of use:
+
+  PP = Parameters(root="/usr/local/lib", basename="libfoo", ext=".so.3", \
+                  fullpath=ActiveReadValue(lambda p : \
+                    os.path.join(p.root, p.basename + p.ext)))
+
+  print PP.fullpath  # gives "/usr/local/lib/libfoo.so.3"
+  PP.ext = ".a"
+  print PP.fullpath  # gives "/usr/local/lib/libfoo.a"
+  """
+  def __init__(self, function):
+    if not hasattr(self, "__call__"):
+      raise TypeError, \
+        ("Initializing ActiveReadValue object with a non-callable argument")
+    self._function = function
+  def __call__(self, p):
+    return self._function(p)
+
+
+
 class Parameters(dict):
   """A standardized way to define and/or pass parameters (with possible
   default values) among routines.
@@ -191,15 +220,24 @@ class Parameters(dict):
       for ov in self._list_:
         try:
           v = ov[key]
-          if v != None: return v
+          if v == None: continue
         except KeyError:
           pass
+        else:
+          # (NOTE.1)
+          # Execute the value activation here so if it raises a KeyError
+          # exception, it won't be misconstrued as the parameter name lookup
+          # failure in the try block above.
+          return self._ActiveReadValue_(v)
     else:
       for ov in self._list_:
         try:
-          return ov[key]
+          v = ov[key]
         except KeyError:
           pass
+        else:
+          # See (NOTE.1)
+          return self._ActiveReadValue_(v)
     # Otherwise: -- but most likely this will return attribute error:
     return dict.__getattribute__(self, key)
   def __setattr__(self, key, value):
@@ -219,18 +257,30 @@ class Parameters(dict):
       for ov in self._list_:
         try:
           v = ov[key]
-          if v != None: return v
+          if v == None: continue
         except KeyError:
           pass
+        else:
+          # See (NOTE.1)
+          return self._ActiveReadValue_(v)
     else:
       for ov in self._list_:
         try:
-          return ov[key]
+          v = ov[key]
         except KeyError:
           pass
+        else:
+          # See (NOTE.1)
+          return self._ActiveReadValue_(v)
     raise KeyError, "Cannot find parameter `%s'" % key
   #def __setitem__(self, key, value):  # -- inherited from dict
   #  self._prm_[key] = value
+  def _ActiveReadValue_(self, val):
+    """Private subroutine for evaluating `active' members."""
+    if isinstance(val, ActiveReadValue):
+      return val(self)
+    else:
+      return val
 
   # TODO in the future for iterative accesses:
   # -- not that essential because we know the name of
