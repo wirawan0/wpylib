@@ -165,6 +165,8 @@ class Parameters(dict):
       because of the shallow copying involved here.
       At present, the `_flatten_' attribute will not be propagated to the child
       Parameters objects created by this parent object.
+      To force flattening child objects, specify `_flatten_=True' when you call
+      `_create_()' to create a child object.
     * _kwparam_ = the name of the excess argument dict to look for in the
       function argument list (default: `_opts_').
     * _userparam_ = the name of the explicitly defined user-defined parameter
@@ -182,10 +184,14 @@ class Parameters(dict):
     # Store the user-defined overrides in its own container:
     dict.clear(self)
     if _opts_.get('_flatten_', False):
-      #FIXME# if p is a Parameters object, then we must recursively flatten it too
+      # Important: if p is a Parameters object, then we must recursively flatten it too
       for p in _override_dicts_[::-1]:
-        dict.update(self, p)
+        #from pprint import pprint
+        #print("Override:")
+        #pprint(p)
+        dict.update(self, flatten_dict(p))
       dict.update(self, _opts_)
+      self.__dict__["_list_"] = [ Parameters._self_weakref_(self) ]
     else:
       dict.update(self, _opts_)
       # WARNING: Using weakref proxy is important:
@@ -326,7 +332,7 @@ class Parameters(dict):
     _list_ = self.__dict__["_list_"]
     for D in _list_[::-1]:
       #FIXME# if D is a Parameters object then we must recursively flatten it too
-      K.update([ (k,D[k]) for k in D ])
+      K.update([ (k,D[k]) for k in flatten_dict(D) ])
     return K
 
   def _update_(self, srcdict):
@@ -338,10 +344,12 @@ class Parameters(dict):
     updated into the "self" dict.
     """
     dict.update(self, srcdict)
+    return self
   def _append_(self, *dicts):
     """Appends dictionary search path to this Parameters object.
     """
     self.__dict__["_list_"] += list(dicts)
+    return self
   def _prepend_(self, *dicts, **_options_):
     """Prepends dictionary search path to this Parameters object.
     This will not override the first dict, which is its own dictionary object.
@@ -353,6 +361,7 @@ class Parameters(dict):
       self.__dict__["_list_"] = [ _list_[0] ] + list(dicts) + _list_[1:]
     else:
       self.__dict__["_list_"] = list(dicts) + _list_
+    return self
   def __add__(self, srcdict):
     """Returns a copy of the Parameters() object, with the most-overriding
     parameters updated from the contents of srcdict."""
@@ -408,6 +417,10 @@ class Parameters(dict):
       - _localvars_ (boolean) = whether to include the local vars in the
         lookup chain. Default: None; refer back to the object's
         _localvars_ attribute.
+      - _flatten_ (boolean) = whether to flatten the lookup dicts into
+        a single dict.
+        Caveat: This will also "disconnect" the created object from any changes
+        done on the dicts in the search path.
 
     Cautions for using `_localvar_` option:
     1) The default is False because it can be very confusing!
@@ -431,6 +444,7 @@ class Parameters(dict):
     _kwparam_ = _options_.get("_kwparam_", None)
     _userparam_ = _options_.get("_userparam_", None)
     _localvars_ = _options_.get("_localvars_", None)
+    _flatten_ = _options_.get("_flatten_", False)
 
     if _kwparam_ == None: _kwparam_ = self._kwparam_
     if _userparam_ == None: _userparam_ = self._userparam_
@@ -489,9 +503,18 @@ class Parameters(dict):
     contexts += [ d for d in defaults ]
 
     # Now construct the Parameters() class for this calling function:
-    return Parameters(_kwparam_=self._kwparam_, _userparam_=self._userparam_, *contexts)
+    return Parameters(_kwparam_=self._kwparam_, _userparam_=self._userparam_, \
+                      _flatten_=_flatten_, *contexts)
 
   #def __dict__(self):
   #  return self._prm_
 
 
+def flatten_dict(D):
+  """Returns a flattened copy of a dict-like object.
+  Useful for recursively flattening a Parameters object dicts.
+  """
+  if isinstance(D, Parameters):
+    return D._flatten_()
+  else:
+    return D
