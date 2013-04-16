@@ -183,7 +183,7 @@ class Parameters(dict):
     dict.clear(self)
     if _opts_.get('_flatten_', False):
       #FIXME# if p is a Parameters object, then we must recursively flatten it too
-      for p in _override_dicts_:
+      for p in _override_dicts_[::-1]:
         dict.update(self, p)
       dict.update(self, _opts_)
     else:
@@ -277,6 +277,8 @@ class Parameters(dict):
   #  self._prm_[key] = value
   def _ActiveReadValue_(self, val):
     """Private subroutine for evaluating `active' members."""
+    #FIXME# Value overrides specified in enclosing Parameters object instance
+    # cannot be searched from this (enclosed) instance.
     if isinstance(val, ActiveReadValue):
       return val(self)
     else:
