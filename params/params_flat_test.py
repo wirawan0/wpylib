@@ -2,6 +2,7 @@
 # 20100930
 
 from wpylib.params import flat as params
+from pprint import pprint
 
 global_defaults = params(
   nbasis= 275,
@@ -178,6 +179,67 @@ def test6():
   print p.input_template
 
   print "\nHere is the generator script:\n*%(input_template)s*" % p._create_(deltau=2.775)
+  # FAILED: The deltau was not updated to 2.775 as it should have.
+  # WHY? Because _create_ does NOT take any keyword argument like that
+  # to override the values.
+
+
+def test7():
+  """Demonstrates the FAILURE of active method when the params is inherited
+  elsewhere.
+  Workaround: we must flatten the lookup dicts into one, then you the active method
+  will work."""
+  from wpylib.text_tools import str_snippet as snippet
+  from wpylib.params.params_flat import ActiveReadValue as Act
+  defaults = {
+    'nbasis': 320,
+    'npart': 37,
+    'deltau': 0.025,
+  }
+  print "test7()"
+  p = params(defaults, nbasis=332)
+  p.input_template = Act(lambda P: snippet("""\
+  input = {
+    nbasis = %(nbasis)d
+    npart = %(npart)d
+    deltau = %(deltau)s
+  };
+  code = {
+    %(code_template)s
+  };
+  """) % P)
+  p.code_template = Act(lambda P: snippet("""\
+    for (i = 1; %(nbasis)d; ++i) {
+      print i, %(deltau)g
+    }
+  """) % P)
+  print "\nInput template 1:"
+  print p.input_template
+  print "\n--- The case above was OK. ---\n"
+
+  print "\n--- The case below was not OK. ---\nThe nbasis and deltau args were not updated in two printouts below"
+  Q = params(p)
+  Q.nbasis = 327
+  print "\nInput template 2 after updating nbasis:"
+  print Q.input_template
+
+
+  print "\n--- The case below was OK, but it requires flattening of the search dicts. ---\n"
+
+  R = params(p, _flatten_=True)
+  R.nbasis = 327
+  pprint(R)
+  print len(R._list_)
+  print "\nInput template 2 after flattening and updating nbasis:"
+  print R.input_template
+
+  print "\nHere is the generator script:\n*%(input_template)s*" % p._create_(_flatten_=True)._update_(dict(deltau=2.775))
+
+def test8():
+  dict1 = params(a=10, b=12)
+  dict2 = params(dict1, b=333, c=421)
+  dict3 = params(dict2, d=38, e="joey", a=32768)
+  pprint(dict3._flatten_())
 
 
 def dump_objects():
@@ -187,7 +249,7 @@ def dump_objects():
 
 
 if __name__ == "__main__":
-  test6()
+  test8()
   exit()
   test1()
   test2()
