@@ -30,7 +30,9 @@ class tee_output(object):
     auto_close = []
     mode = opts.get("mode", "w")
     for f in files:
-      if isinstance(f, basestring):
+      if f == None:
+        pass
+      elif isinstance(f, basestring):
         F = open(f, mode=mode)
         fd.append(F)
         auto_close.append(True)
