@@ -122,6 +122,8 @@ class Parameters(dict):
       return dict.__getitem__(self.ref(), key)
     def __iter__(self):
       return dict.__iter__(self.ref())
+    def __dict_object__(self):
+      return self.ref()
 
   def __init__(self, *_override_dicts_, **_opts_):
     """
@@ -332,7 +334,10 @@ class Parameters(dict):
     _list_ = self.__dict__["_list_"]
     for D in _list_[::-1]:
       #FIXME# if D is a Parameters object then we must recursively flatten it too
-      K.update([ (k,D[k]) for k in flatten_dict(D) ])
+      if isinstance(D, Parameters._self_weakref_):
+        K.update(D.__dict_object__())
+      else:
+        K.update(flatten_dict(D))
     return K
 
   def _update_(self, srcdict):
