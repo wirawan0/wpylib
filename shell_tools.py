@@ -21,6 +21,9 @@ except:
     print >>sys.stderr, "Newer subprocess module does not exist, using older interfaces."
   has_subprocess = False
 
+
+# Files, directories, and filename utilities
+
 def mcd(subdir):
   # Assuming we have GNU coreutils' mkdir
   mkdir("-p", subdir)
@@ -45,6 +48,35 @@ def provide_link(dest, src):
   if not os.path.exists(dest):
     # strip trailing /'s just in case it exists
     os.symlink(src, dest.rstrip("/"))
+
+
+# The following 3 routines are from
+# http://code.activestate.com/recipes/208993-compute-relative-path-from-one-directory-to-anothe/
+# by Cimarron Taylor
+# (PSF license)
+
+def _pathsplit(p, rest=[]):
+  (h,t) = os.path.split(p)
+  if len(h) < 1: return [t]+rest
+  if len(t) < 1: return [h]+rest
+  return _pathsplit(h,[t]+rest)
+
+def _commonpath(l1, l2, common=[]):
+  if len(l1) < 1: return (common, l1, l2)
+  if len(l2) < 1: return (common, l1, l2)
+  if l1[0] != l2[0]: return (common, l1, l2)
+  return _commonpath(l1[1:], l2[1:], common+[l1[0]])
+
+def relpath(p1, p2):
+  """Computes the relative path of p2 with respect to p1."""
+  (common,l1,l2) = _commonpath(_pathsplit(p1), _pathsplit(p2))
+  p = []
+  if len(l1) > 0:
+    p = [ '../' * len(l1) ]
+  p = p + l2
+  return os.path.join( *p )
+
+# /// end code snippet
 
 
 # Globbing utilities:
