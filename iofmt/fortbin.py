@@ -14,6 +14,63 @@ import sys
 
 from wpylib.sugar import ifelse
 
+class fortran_types(object):
+  """A description of Fortran data types.
+  Useful for estimating memory use, file sizes, etc."""
+  desc = {
+    numpy.int32: dict(
+      size=4,
+    ),
+    numpy.int64: dict(
+      size=8,
+    ),
+    numpy.float32: dict( # IEEE single precision
+      size=4,
+    ),
+    numpy.float64: dict( # IEEE double precision
+      size=8,
+    ),
+    numpy.complex64: dict( # Fortran 90 complex(4)
+      size=8,
+    ),
+    numpy.complex128: dict( # Fortran 90 complex(8)
+      size=16,
+    ),
+  }
+  # defaults: ok for "LP64" systems or typical 32-bit systems
+  desc[int] = desc[numpy.int32]
+  desc[float] = desc[numpy.float64]
+  desc[complex] = desc[numpy.complex128]
+  record_marker_size = 4 # size for a record marker (2x this for a record)
+
+  # special data types
+  class fortran_dtype(object):
+    """Base class for all special Fortran data types."""
+    pass
+  class character(object):
+    """Fortran fixed-width character string."""
+    def __init__(self, len):
+      self.len = len
+    @property
+    def size(self):
+      return self.len
+
+  def size(self, dtype):
+    """Computes the size of a single datatype."""
+    if isinstance(dtype, self.fortran_dtype):
+      return dtype.size()
+    else:
+      return self.desc[dtype]['size']
+
+  def file_rec_size(self, dtypes):
+    """Computes the size of a record on disk."""
+    return sum([ self.size(d) for d in dtypes ]) + 2 * self.record_marker_size
+
+  def file_data_size(self, recs):
+    """Computes the size of a sequence of records on disk."""
+    return sum([ self.file_rec_size(r) for r in recs ])
+
+
 class fortran_bin_file(object):
   """A tool for reading and writing Fortran binary files.
 
