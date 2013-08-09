@@ -158,7 +158,7 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
 
   """
   global last_fit_rslt, last_chi_sqr
-  from scipy.optimize import fmin, leastsq, anneal
+  from scipy.optimize import fmin, fmin_bfgs, leastsq, anneal
   # We want to minimize this error:
   if Data != None: # an alternative way to specifying x and y
     y = Data[0]
@@ -200,8 +200,9 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
                    full_output=1,
                    **opts
                    )
-    keys = ('xopt', 'cov_x', 'infodict', 'mesg', 'ier')
+    keys = ('xopt', 'cov_x', 'infodict', 'mesg', 'ier') # ier = error message code from MINPACK
   elif method == 'fmin':
+    # Nelder-Mead Simplex algorithm
     rslt = fmin(fun_err2,
                 x0=Guess, # initial coefficient guess
                 args=(x,y), # data onto which the function is fitted
@@ -209,6 +210,15 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
                 **opts
                )
     keys = ('xopt', 'fopt', 'iter', 'funcalls', 'warnflag', 'allvecs')
+  elif method == 'fmin_bfgs' or method == 'bfgs':
+    # Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm
+    rslt = fmin_bfgs(fun_err2,
+                     x0=Guess, # initial coefficient guess
+                     args=(x,y), # data onto which the function is fitted
+                     full_output=1,
+                     **opts
+                    )
+    keys = ('xopt', 'fopt', 'funcalls', 'gradcalls', 'warnflag', 'allvecs')
   elif method == 'anneal':
     rslt = anneal(fun_err2,
                   x0=Guess, # initial coefficient guess
