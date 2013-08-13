@@ -124,6 +124,7 @@ class fit_result(result_base):
 def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
              debug=0,
              outfmt=1,
+             Funct_hook=None,
              method='leastsq', opts={}):
   """
   Performs a function fitting.
@@ -156,6 +157,15 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   * via Data argument (which is a multi-column dataset, where the first row
     is the "y" argument).
 
+  Debugging and other investigations can be done with Funct_hook, which,
+  if defined, will be called every time right after Funct is called.
+  It is called with the following parameters:
+    Funct_hook(C, x, y, f, r)
+  where
+    f := f(C,x)
+    r := f(C,x) - y
+  Note that the reference to the hook object is passed as the first argument
+  to facilitate object oriented programming.
   """
   global last_fit_rslt, last_chi_sqr
   from scipy.optimize import fmin, fmin_bfgs, leastsq, anneal
@@ -173,13 +183,22 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   elif Guess == None: # VERY OLD, DO NOT USE ANYMORE!
     Guess = [ y.mean() ] + [0.0, 0.0] * len(x)
 
-  if debug < 20:
-    fun_err = lambda CC, xx, yy: abs(Funct(CC,xx) - yy)
+  if Funct_hook != None:
+    if not hasattr(Funct_hook, "__call__"):
+      raise TypeError, "Funct_hook argument must be a callable function."
+    def fun_err(CC, xx, yy):
+      ff = Funct(CC,xx)
+      r = (ff - yy)
+      Funct_hook(CC, xx, yy, ff, r)
+      return r
+    fun_err2 = lambda CC, xx, yy: numpy.sum(abs(fun_err(CC, xx, yy))**2)
+  elif debug < 20:
+    fun_err = lambda CC, xx, yy: (Funct(CC,xx) - yy)
     fun_err2 = lambda CC, xx, yy: numpy.sum(abs(Funct(CC,xx) - yy)**2)
   else:
     def fun_err(CC, xx, yy):
       ff = Funct(CC,xx)
-      r = abs(ff - yy)
+      r = (ff - yy)
       print "  err: %s << %s << %s, %s" % (r, ff, CC, xx)
       return r
     def fun_err2(CC, xx, yy):
