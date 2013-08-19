@@ -173,7 +173,9 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   if Data != None: # an alternative way to specifying x and y
     y = Data[0]
     x = Data[1:] # possibly multidimensional!
-  if hasattr(Funct, "Guess_xy"):
+  if Guess != None:
+    pass
+  elif hasattr(Funct, "Guess_xy"):
     # Try to provide an initial guess
     Guess = Funct.Guess_xy(x, y)
   elif hasattr(Funct, "Guess"):
@@ -211,6 +213,7 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     print "Guess params:"
     print Guess
 
+  extra_keys = {}
   if method == 'leastsq':
     # modified Levenberg-Marquardt algorithm
     rslt = leastsq(fun_err,
@@ -220,6 +223,10 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
                    **opts
                    )
     keys = ('xopt', 'cov_x', 'infodict', 'mesg', 'ier') # ier = error message code from MINPACK
+    extra_keys = {
+      # map the output values to the same keyword as other methods below:
+      'funcalls': (lambda : rslt[2]['nfev']),
+    }
   elif method == 'fmin':
     # Nelder-Mead Simplex algorithm
     rslt = fmin(fun_err2,
@@ -260,9 +267,12 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     print "chi square = ", last_chi_sqr / len(y)
   if outfmt == 1:
     return rslt[0]
-  else:
+  else: # outfmt == 0 -- full result.
     rec = fit_result(dict(zip(keys, rslt)))
     rec['chi_square'] = chi_sqr
     rec['fit_method'] = method
+    # If there are extra keys, record them here:
+    for (k,v) in extra_keys.iteritems():
+      rec[k] = v()
     return rec
 
