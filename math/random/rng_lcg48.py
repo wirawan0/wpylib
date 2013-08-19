@@ -22,6 +22,7 @@ class lcg48(rng_base):
   # This is "seed 1" in the legacy rannyu seed library.
   L = 127
   n = 11863279
+  seed_index = 1
   div_two_48 = 2.0**(-48)
   def __call__(self):
     L_new = (self.m * self.L + self.n) & 0xFFFFFFFFFFFF
