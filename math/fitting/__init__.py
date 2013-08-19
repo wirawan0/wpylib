@@ -52,7 +52,7 @@ class Poly_base(object):
 
 
 class Poly_order2(Poly_base):
-  """Polynomial of order 2 without cross terms."""
+  """Multidimensional polynomial of order 2 without cross terms."""
   order = 2
   def __call__(self, C, x):
     return C[0] \
@@ -60,7 +60,7 @@ class Poly_order2(Poly_base):
               for i in xrange(len(x)) ])
 
 class Poly_order2_only(Poly_base):
-  """Polynomial of order 2 without cross terms.
+  """Multidimensional polynomial of order 2 without cross terms.
   The linear terms are deleted."""
   order = 1 # HACK: the linear term is deleted
   def __call__(self, C, x):
@@ -69,7 +69,7 @@ class Poly_order2_only(Poly_base):
               for i in xrange(len(x)) ])
 
 class Poly_order2x_only(Poly_base):
-  '''Order-2-only polynomial with all the cross terms.'''
+  '''Multidimensional order-2-only polynomial with all the cross terms.'''
   order = 2 # but not used
   def __call__(self, C, x):
     ndim = self.dim
@@ -100,7 +100,7 @@ class Poly_order2x_only(Poly_base):
     return 1 + self.dim * (self.dim + 1) / 2
 
 class Poly_order3(Poly_base):
-  """Polynomial of order 3 without cross terms.
+  """Multidimensional polynomial of order 3 without cross terms.
   The linear terms are deleted."""
   order = 3
   def __call__(self, C, x):
@@ -109,7 +109,7 @@ class Poly_order3(Poly_base):
                  for i in xrange(len(x)) ])
 
 class Poly_order4(Poly_base):
-  """Polynomial of order 4 without cross terms.
+  """Multidimensional polynomial of order 4 without cross terms.
   The linear terms are deleted."""
   order = 4
   def __call__(self, C, x):
