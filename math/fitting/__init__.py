@@ -121,7 +121,9 @@ class Poly_order4(Poly_base):
 class fit_result(result_base):
   pass
 
-def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
+def fit_func(Funct, Data=None, Guess=None,
+             x=None, y=None,
+             w=None, dy=None,
              debug=0,
              outfmt=1,
              Funct_hook=None,
@@ -145,6 +147,11 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   The "y" array is a 1-D array of length M, which contain the "measured"
   value of the function at every domain point given in "x".
 
+  The "w" or "dy" array (only one of them can be specified in a call),
+  if given, specifies either the weight or standard error of the y data.
+  If "dy" is specified, then "w" is defined to be (1.0 / dy**2), per usual
+  convention.
+
   Inspect Poly_base, Poly_order2, and other similar function classes in this
   module to see the example of the Funct function.
 
@@ -157,9 +164,9 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   * via Data argument (which is a multi-column dataset, where the first row
     is the "y" argument).
 
-  Debugging and other investigations can be done with Funct_hook, which,
-  if defined, will be called every time right after Funct is called.
-  It is called with the following parameters:
+  Debugging and other investigations can be done with "Funct_hook", which,
+  if defined, will be called every time right after "Funct" is called.
+  It is called with the following signature:
     Funct_hook(C, x, y, f, r)
   where
     f := f(C,x)
@@ -173,6 +180,10 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   if Data != None: # an alternative way to specifying x and y
     y = Data[0]
     x = Data[1:] # possibly multidimensional!
+
+  if debug >= 10:
+    print "Dimensionality of the domain is: ", len(x)
+
   if Guess != None:
     pass
   elif hasattr(Funct, "Guess_xy"):
@@ -185,40 +196,57 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   elif Guess == None: # VERY OLD, DO NOT USE ANYMORE!
     Guess = [ y.mean() ] + [0.0, 0.0] * len(x)
 
-  if Funct_hook != None:
-    if not hasattr(Funct_hook, "__call__"):
-      raise TypeError, "Funct_hook argument must be a callable function."
-    def fun_err(CC, xx, yy):
-      ff = Funct(CC,xx)
-      r = (ff - yy)
-      Funct_hook(CC, xx, yy, ff, r)
-      return r
-    fun_err2 = lambda CC, xx, yy: numpy.sum(abs(fun_err(CC, xx, yy))**2)
-  elif debug < 20:
-    fun_err = lambda CC, xx, yy: (Funct(CC,xx) - yy)
-    fun_err2 = lambda CC, xx, yy: numpy.sum(abs(Funct(CC,xx) - yy)**2)
-  else:
-    def fun_err(CC, xx, yy):
-      ff = Funct(CC,xx)
-      r = (ff - yy)
-      print "  err: %s << %s << %s, %s" % (r, ff, CC, xx)
-      return r
-    def fun_err2(CC, xx, yy):
-      ff = Funct(CC,xx)
-      r = numpy.sum(abs(ff - yy)**2)
-      print "  err: %s << %s << %s, %s" % (r, ff, CC, xx)
-      return r
-
   if debug >= 5:
     print "Guess params:"
     print Guess
 
+  if Funct_hook != None:
+    if not hasattr(Funct_hook, "__call__"):
+      raise TypeError, "Funct_hook argument must be a callable function."
+    def fun_err(CC, xx, yy, ww):
+      """Computes the error of the fitted functional against the
+      reference data points:
+
+      * CC = current function parameters
+      * xx = domain points of the ("experimental") data
+      * yy = target points of the ("experimental") data
+      * ww = weights of the ("experimental") data
+      """
+      ff = Funct(CC,xx)
+      r = (ff - yy) * ww
+      Funct_hook(CC, xx, yy, ff, r)
+      return r
+  elif debug < 20:
+    def fun_err(CC, xx, yy, ww):
+      ff = Funct(CC,xx)
+      r = (ff - yy) * ww
+      return r
+  else:
+    def fun_err(CC, xx, yy, ww):
+      ff = Funct(CC,xx)
+      r = (ff - yy) * ww
+      print "  err: %s << %s << %s, %s, %s" % (r, ff, CC, xx, ww)
+      return r
+
+  fun_err2 = lambda CC, xx, yy, ww: numpy.sum(abs(fun_err(CC, xx, yy, ww))**2)
+
+  if w != None and dy != None:
+    raise TypeError, "Only one of w or dy can be specified."
+  if dy != None:
+    sqrtw = 1.0 / dy
+  elif w != None:
+    sqrtw = numpy.sqrt(w)
+  else:
+    sqrtw = 1.0
+
+  # Full result is stored in rec
+  rec = fit_result()
   extra_keys = {}
   if method == 'leastsq':
     # modified Levenberg-Marquardt algorithm
     rslt = leastsq(fun_err,
                    x0=Guess, # initial coefficient guess
-                   args=(x,y), # data onto which the function is fitted
+                   args=(x,y,sqrtw), # data onto which the function is fitted
                    full_output=1,
                    **opts
                    )
@@ -227,11 +255,22 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
       # map the output values to the same keyword as other methods below:
       'funcalls': (lambda : rslt[2]['nfev']),
     }
+    # Added estimate of fit parameter uncertainty (matching GNUPLOT parameter
+    # uncertainty.
+    # The error is estimated to be the diagonal of cov_x, multiplied by the WSSR
+    # (chi_square below) and divided by the number of fit degrees of freedom.
+    # I used newer scipy.optimize.curve_fit() routine as my cheat sheet here.
+    if outfmt == 0:
+      if rslt[1] != None and len(y) > len(rslt[0]):
+        NDF = len(y) - len(rslt[0])
+        extra_keys['xerr'] = (lambda:
+            numpy.sqrt(numpy.diagonal(rslt[1]) * rec['chi_square'] / NDF)
+        )
   elif method == 'fmin':
     # Nelder-Mead Simplex algorithm
     rslt = fmin(fun_err2,
                 x0=Guess, # initial coefficient guess
-                args=(x,y), # data onto which the function is fitted
+                args=(x,y,sqrtw), # data onto which the function is fitted
                 full_output=1,
                 **opts
                )
@@ -240,7 +279,7 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
     # Broyden-Fletcher-Goldfarb-Shanno (BFGS) algorithm
     rslt = fmin_bfgs(fun_err2,
                      x0=Guess, # initial coefficient guess
-                     args=(x,y), # data onto which the function is fitted
+                     args=(x,y,sqrtw), # data onto which the function is fitted
                      full_output=1,
                      **opts
                     )
@@ -248,14 +287,14 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   elif method == 'anneal':
     rslt = anneal(fun_err2,
                   x0=Guess, # initial coefficient guess
-                  args=(x,y), # data onto which the function is fitted
+                  args=(x,y,sqrtw), # data onto which the function is fitted
                   full_output=1,
                   **opts
                  )
     keys = ('xopt', 'fopt', 'T', 'funcalls', 'iter', 'accept', 'retval')
   else:
     raise ValueError, "Unsupported minimization method: %s" % method
-  chi_sqr = fun_err2(rslt[0], x, y)
+  chi_sqr = fun_err2(rslt[0], x, y, sqrtw)
   last_chi_sqr = chi_sqr
   last_fit_rslt = rslt
   if (debug >= 10):
@@ -265,14 +304,19 @@ def fit_func(Funct, Data=None, Guess=None, x=None, y=None,
   if debug >= 1:
     print "params = ", rslt[0]
     print "chi square = ", last_chi_sqr / len(y)
-  if outfmt == 1:
-    return rslt[0]
-  else: # outfmt == 0 -- full result.
-    rec = fit_result(dict(zip(keys, rslt)))
+  if outfmt == 0: # outfmt == 0 -- full result.
+    rec.update(dict(zip(keys, rslt)))
     rec['chi_square'] = chi_sqr
     rec['fit_method'] = method
     # If there are extra keys, record them here:
     for (k,v) in extra_keys.iteritems():
       rec[k] = v()
     return rec
-
+  elif outfmt == 1:
+    return rslt[0]
+  else:
+    try:
+      x = str(outfmt)
+    except:
+      x = "(?)"
+    raise ValueError, "Invalid `outfmt' argument = " + x
