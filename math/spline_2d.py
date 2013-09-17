@@ -9,16 +9,26 @@ import numpy
 import scipy.interpolate
 
 class spline_2d:
-  """Simple interpolation for two-dimensional curve.
-  Created to handle the quirks of current SciPy interpolation
-  routines."""
+  """Simple interpolation or smooth approximation
+  of a two-dimensional curve.
+
+  Input parameters:
+
+  - s: smoothing of the spline curve. The default is 0,
+    which means plain interpolation, no no extra smoothing.
+    If s > 0, then some smoothing is performed, and the
+    curve represents an approximation of the input x,y
+    curve.
+  - w: the weight factor for each data point.
+  """
   # Important notes on spline CAVEATS:
-  # - for some reason we HAVE to make a copy of the 'x' array
-  #   (to make it contiguous, probably?)
-  # - also, the x values better be sorted in ascending order, or else
+  # - the x values better be sorted in ascending order, or else
   #   the routine would return nonsense (i.e. NaN's).
-  def __init__(self, x, y):
+  # - no two same values of x can be specified.
+  def __init__(self, x, y, w=None, s=0):
     self.init(x,y)
+    self.s = s
+    self.w = w
 
   def init(self, x, y):
     # First, the x must be sorted, so we make a private copy of
@@ -29,7 +39,7 @@ class spline_2d:
     self.x = self.data['x']
     self.y = self.data['y']
     # Quirk 2: the x data for spline function must be contiguous
-    # See below in init_spline_params()
+    # (No, now this is handled by splrep() properly.)
     #self.x_copy = self.x.copy()
 
     try:
@@ -43,7 +53,7 @@ class spline_2d:
     calling the first spline function if you want different, non-default
     parameters."""
     self.spline_params \
-      = scipy.interpolate.splrep(self.x, self.y, s=0)
+      = scipy.interpolate.splrep(self.x, self.y, w=self.w, s=self.s)
 
   def spline(self, xnew):
     try:
