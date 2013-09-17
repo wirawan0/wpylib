@@ -43,14 +43,14 @@ class spline_2d:
     calling the first spline function if you want different, non-default
     parameters."""
     self.spline_params \
-      = scipy.interpolate.splmake(self.x.copy(), self.y)
+      = scipy.interpolate.splrep(self.x, self.y, s=0)
 
   def spline(self, xnew):
     try:
       params = self.spline_params
     except:
       self.init_spline_params()
-    return scipy.interpolate.spleval(self.spline_params, xnew)
+    return scipy.interpolate.splev(x=xnew, tck=self.spline_params, der=0)
 
 
 
