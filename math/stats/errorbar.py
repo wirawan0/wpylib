@@ -175,7 +175,7 @@ class errorbar(object):
   def __str__(self):
     if getattr(self, "eb", None):
       return self.eb
-    elif getattr(self, "eb", None) == None and getattr(self, "ebproc", None) != None:
+    elif getattr(self, "eb", None) == None and callable(getattr(self, "ebproc", None)):
       self.eb = self.ebproc(self.val, self.err)
       return self.eb
     else:
