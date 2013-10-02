@@ -151,6 +151,7 @@ class errorbar(object):
   This value is custom-made."""
 
   ebproc = staticmethod(compress_errorbar_cxx)
+  lazy_string = True
 
   def __init__(self, val, err, eb=None, ebproc=None):
     self.val = val
@@ -158,7 +159,8 @@ class errorbar(object):
     if ebproc != None:
       self.ebproc = ebproc
     if eb == None:
-      self.eb = self.ebproc(val, err)
+      if not self.lazy_string:
+        self.eb = self.ebproc(val, err)
     else:
       self.eb = eb
 
@@ -173,13 +175,24 @@ class errorbar(object):
   def __str__(self):
     if getattr(self, "eb", None):
       return self.eb
+    elif getattr(self, "eb", None) == None and getattr(self, "ebproc", None) != None:
+      self.eb = self.ebproc(self.val, self.err)
+      return self.eb
     else:
       return "%g +- %g" % (self.val, self.err)
   display = __str__
   def __repr__(self):
     return "errorbar(%s,%s,'%s')" % (self.val, self.err, self.display())
+  def update(self, val, err):
+    self.val = val
+    self.err = err
+    self.ebupdate()
+    return self
   def ebupdate(self):
-    self.eb = self.ebproc(self.val, self.err)
+    if self.lazy_string:
+      self.eb = None
+    else:
+      self.eb = self.ebproc(self.val, self.err)
   def copy(self):
     return self.__class__(self.val, self.err, self.eb, self.ebproc)
   # Some algebraic operations with scalars are defined here:
