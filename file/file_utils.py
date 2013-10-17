@@ -31,6 +31,7 @@ try:
 except:
   has_subprocess = False
 
+from wpylib.sugar import is_iterable
 
 class super_file(object):
   '''"Super-file" hack wrapper for a file-like object.
@@ -115,7 +116,7 @@ def path_search(*specs, **opts):
   filetest = opts.get("filetest", os.path.isfile)
 
   for spec in specs:
-    if not getattr(spec, "__iter__", False):
+    if not is_iterable(spec): # maybe a string?
       xspecs.append((spec,))
       xlen.append(1)
     else:
