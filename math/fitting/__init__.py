@@ -119,6 +119,14 @@ class Poly_order4(Poly_base):
 
 
 class fit_result(result_base):
+  """The basic values expected in fit_result are:
+  - xopt
+  - chi_square
+
+  Optional values:
+  - funcalls
+  - xerr
+  """
   pass
 
 def fit_func(Funct, Data=None, Guess=None,
@@ -177,9 +185,14 @@ def fit_func(Funct, Data=None, Guess=None,
   global last_fit_rslt, last_chi_sqr
   from scipy.optimize import fmin, fmin_bfgs, leastsq, anneal
   # We want to minimize this error:
-  if Data != None: # an alternative way to specifying x and y
+  if Data != None:
+    # an alternative way to specifying x and y
+    Data = numpy.asarray(Data)
     y = Data[0]
     x = Data[1:] # possibly multidimensional!
+  else:
+    x = numpy.asarray(x)
+    y = numpy.asarray(y)
 
   if debug >= 10:
     print "Dimensionality of the domain is: ", len(x)
@@ -233,7 +246,7 @@ def fit_func(Funct, Data=None, Guess=None,
   if w != None and dy != None:
     raise TypeError, "Only one of w or dy can be specified."
   if dy != None:
-    sqrtw = 1.0 / dy
+    sqrtw = 1.0 / numpy.asarray(dy)
   elif w != None:
     sqrtw = numpy.sqrt(w)
   else:
