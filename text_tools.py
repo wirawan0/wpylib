@@ -89,6 +89,24 @@ def str_snippet(S):
   file segments."""
   return str_unindent(S).rstrip()
 
+def str_trunc_begin(S, L):
+  """Returns a possibly truncated S (ellipsis added at the string's
+  beginning) if the length of S is greater than L.
+  L should be equal to or greater than 3 to be making sense."""
+  if len(S) > L:
+    return "..." + S[min(-L+3,0):]
+  else:
+    return S
+
+def str_trunc_end(S, L):
+  """Returns a possibly truncated S (ellipsis added at the string's
+  ending) if the length of S is greater than L.
+  L should be equal to or greater than 3 to be making sense."""
+  if len(S) > L:
+    return S[:max(L-3,0)] + "..."
+  else:
+    return S
+
 
 def str_save_to_file(filename, s1, *more_str, **opts):
   """Save one or more string (or iterables) to a file with a given file.
@@ -133,6 +151,32 @@ def str_expand(template, params, maxiter=100):
   return str1
 
 
+# Internal variable: don't mess!
+_str_fmt_heading_rx = None
+def str_fmt_heading(fmt):
+  """Replaces a printf-style formatting with one suitable for table heading:
+  all non-string conversions are replaced with string conversions,
+  preserving the minimum widths."""
+  # Originally from: $PWQMC77/scripts/cost.py and later Cr2_analysis_cbs.py .
+  #
+  #_str_fmt_heading_rx = None # only for development purposes
+  import re
+  if _str_fmt_heading_rx == None:
+    # Because of complicated regex, I verbosely write it out here:
+    _str_fmt_heading_rx = re.compile(r"""
+      (
+        %                 # % sign
+        (?:\([^)]+\))?    # optional '(keyname)' mapping key
+        [-+#0 hlL]*       # optional conversion flag
+        [0-9*]*           # optional minimum field width
+      )
+      ((?:\.[0-9]*)?)     # optional precision
+      [^-+#*0 hlL0-9.%s]  # not conv flag, dimensions, nor literal '%',
+                          # nor 's' conversion specifiers
+    """, re.VERBOSE)
+  return _str_fmt_heading_rx.sub(r'\1s', fmt)
+
+
 def str_grep(S, strs):
   """Returns a list of strings wherein the substring S is found."""
   return [s for s in strs if s.find(S) >= 0]
@@ -142,6 +186,7 @@ def str_igrep(S, strs):
   is found."""
   return [i for (i,s) in enumerate(strs) if s.find(S) >= 0]
   #return [i for (s,i) in zip(strs,xrange(len(strs))) if s.find(S) >= 0]
+
 
 
 def slice_str(s):
