@@ -37,14 +37,16 @@ def shift_time(t, dt, localtime=True):
   else:
     return time.gmtime(t1)
 
-def utime_to_iso(t, local=True):
+def utime_to_iso(t=None, local=True):
   """Converts UNIX time (seconds since Epoch) to ISO-formatted time string.
 
   In order to ease time computation/conversion,
   we will use numeric TZ shift (+/-HH:MM) instead of
   letter TZ code (EDT, EST, GMT, etc).
   """
-  from time import localtime, gmtime, strftime, timezone
+  from time import time, localtime, gmtime, strftime, timezone
+  if t == None:
+    t = time()
   if local:
     tt = localtime(t)
     dtz = -timezone + tt.tm_isdst * 3600
