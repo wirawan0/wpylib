@@ -161,6 +161,7 @@ def str_fmt_heading(fmt):
   #
   #_str_fmt_heading_rx = None # only for development purposes
   import re
+  global _str_fmt_heading_rx
   if _str_fmt_heading_rx == None:
     # Because of complicated regex, I verbosely write it out here:
     _str_fmt_heading_rx = re.compile(r"""
