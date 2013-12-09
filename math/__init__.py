@@ -85,3 +85,11 @@ def choose(n,r):
   for (num,denom) in zip(xrange(n,n-r,-1), xrange(1,r+1,1)):
     c = (c * num) // denom
   return c
+
+
+def complex_polar(r, theta):
+  """Generates regular complex data (scalar or array) from
+  an input magnitude and angle."""
+  from numpy import sin, cos
+  # This way will be friendly for arrays:
+  return r * cos(theta) + 1j * r * sin(theta)
