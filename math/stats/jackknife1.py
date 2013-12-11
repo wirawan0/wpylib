@@ -7,7 +7,8 @@ http://young.physics.ucsc.edu/jackboot.pdf
 
 
 Notes on Bootstrapping
-
+Author unspecified
+http://www.math.ntu.edu.tw/~hchen/teaching/LargeSample/notes/notebootstrap.pdf
 
 
 """
@@ -81,13 +82,15 @@ def jk_generate_datasets(a):
     rslt[i, i:] = a[i+1:]
   return rslt
 
-def jk_generate_averages(a, weights=None):
+def jk_generate_averages_old1(a, weights=None):
   """Generates ALL the average samples for jackknife operation
   from the original dataset 'a'.
   For the i-th dataset, this is essentially deleting the
   i-th data point from 'a', then taking the average.
   
   This version does not store N*(N-1) data points; only (N).
+  This version is SLOW because it has to compute
+  the averages N times---thus it still computationally scales as N**2.
   """
   a = numpy.asarray(a)
   N = a.shape[0]
@@ -108,6 +111,31 @@ def jk_generate_averages(a, weights=None):
 
   return aa_jk
 
+def jk_generate_averages(a, weights=None):
+  """Generates ALL the average samples for jackknife operation
+  from the original dataset 'a'.
+  For the i-th dataset, this is essentially deleting the
+  i-th data point from 'a', then taking the average.
+
+  This version does not store N*(N-1) data points; only (N).
+  This version is faster by avoiding N computations of average.
+  """
+  a = numpy.asarray(a)
+  N = a.shape[0]
+  assert len(a.shape) == 1
+  if weights != None:
+    weights = numpy.asarray(weights)
+    assert weights.shape == a.shape
+    aw = a * weights
+    num = numpy.sum(aw) * 1.0
+    denom = numpy.sum(weights)
+    aa_jk = (num - aw) / (denom - weights)
+  else:
+    num = numpy.sum(a) * 1.0
+    aa_jk = (num - a[i]) / (N - 1)
+
+  return aa_jk
+
 '''
 def jk_stats_old(a_jk, func=None):
   """a_jk must be in the same format as that produced by
@@ -121,9 +149,10 @@ def jk_stats_old(a_jk, func=None):
 '''
 
 def jk_wstats_dsets(a_jk, w_jk=None, func=None):
-  """a_jk and w_jk must be in the same format as that produced by
+  """Computes the jackknife statistics from the preprocessed datasets
+  produced by jk_generate_datasets() routine.
+  The input a_jk and w_jk must be in the same format as that produced by
   jk_generate_datasets.
-
   """
   # get all the jackknived stats.
   N = len(a_jk)
