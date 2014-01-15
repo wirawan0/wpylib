@@ -31,6 +31,17 @@ try:
 except:
   has_subprocess = False
 
+try:
+  import lzma
+  has_lzma = True
+except:
+  try:
+    from backports import lzma
+    has_lzma = True
+  except:
+    has_lzma = False
+
+
 from wpylib.sugar import is_iterable
 
 class super_file(object):
@@ -66,11 +77,29 @@ def open_input_file(fname, superize=0):
     fobj = gzip.GzipFile(fname, "r")
   elif fname.endswith(".lzma"):
     # until lzma has a "standard" python module, we use "lzma" executable:
-    if has_subprocess:
-      px = subprocess.Popen(("lzma", "-dc", fname), stdout=subprocess.PIPE)
+    if has_lzma:
+      fobj = lzma.LZMAFile(fname, "r")
+    else:
+      from wpylib.shell_tools import is_executable_file
+      lzma_exe = path_search(os.environ["PATH"].split(os.pathsep),
+                             ("lzma", "xz"),
+                             filetest=is_executable_file)
+      if lzma_exe == None:
+        raise IOError, "Cannot find lzma or xz executable file."
+      if has_subprocess:
+        px = subprocess.Popen((lzma_exe, "-dc", fname), stdout=subprocess.PIPE)
+        fobj = px.stdout
+      else:
+        fobj = os.popen('" -dc "' + fname + '"', "r")
+  elif fname.endswith(".xz"):
+    # until lzma has a "standard" python module, we use "lzma" executable:
+    if has_lzma:
+      fobj = lzma.LZMAFile(fname, "r")
+    elif has_subprocess:
+      px = subprocess.Popen(("xz", "-dc", fname), stdout=subprocess.PIPE)
       fobj = px.stdout
     else:
-      px = os.popen('lzma -dc "' + fname + '"', "r")
+      fobj = os.popen('xz -dc "' + fname + '"', "r")
   else:
     fobj = open(fname, "r")
 
