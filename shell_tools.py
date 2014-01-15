@@ -42,6 +42,13 @@ def file_exists_nonempty(path):
   nonzero size."""
   return os.path.isfile(path) and os.stat(path).st_size > 0
 
+def is_executable_file(path):
+  """Determines whether a file exists and is executable.
+  This implements the "-x" action of the shell's test command.
+  """
+  # Ref: http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+  return os.path.isfile(path) and os.access(path, os.X_OK)
+
 def provide_link(dest, src):
   """Checks if file `dest' exists. If it does not, provide for it by means
   of a softlink from `src'."""
@@ -77,6 +84,12 @@ def relpath(p1, p2):
   return os.path.join( *p )
 
 # /// end code snippet
+
+def path_split_all(p):
+  """Completely decompose a filename path into individual components
+  that can be rejoined later.
+  """
+  return _pathsplit(p)
 
 
 # Globbing utilities:
