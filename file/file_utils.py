@@ -44,6 +44,7 @@ except:
 
 from wpylib.sugar import is_iterable
 
+
 class super_file(object):
   '''"Super-file" hack wrapper for a file-like object.
   Intended to allow extra capabilities to file-like iterators such as:
@@ -80,7 +81,6 @@ def open_input_file(fname, superize=0):
     if has_lzma:
       fobj = lzma.LZMAFile(fname, "r")
     else:
-      from wpylib.shell_tools import is_executable_file
       lzma_exe = path_search(os.environ["PATH"].split(os.pathsep),
                              ("lzma", "xz"),
                              filetest=is_executable_file)
@@ -110,9 +110,69 @@ def open_input_file(fname, superize=0):
 
 
 # Miscellaneous functions:
-# - globbing
-# - file searches and scans
+# - extended path manipulation/file inquiries (os.path-like functionalities)
 
+def file_exists_nonempty(path):
+  """Determines whether a given path is a regular file of
+  nonzero size."""
+  return os.path.isfile(path) and os.stat(path).st_size > 0
+
+def is_executable_file(path):
+  """Determines whether a regular file exists and is executable.
+  This implements the "-x" action of the shell's test command.
+  """
+  # Ref: http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+  return os.path.isfile(path) and os.access(path, os.X_OK)
+
+def dirname2(path):
+  """Returns the directory part of a path.
+  The difference from os.path.dirname is that if the directory
+  part is empty, it is converted to '.' (the current directory)."""
+  d = os.path.dirname(path)
+  if d == '': d = '.'
+  return d
+
+
+# The following 3 routines are from
+# http://code.activestate.com/recipes/208993-compute-relative-path-from-one-directory-to-anothe/
+# by Cimarron Taylor
+# (PSF license)
+#
+# (WP note: not sure if relpath below adds functionality or has different effects
+# compared to os.path.relpath available in Python 2.6+).
+
+def _pathsplit(p, rest=[]):
+  (h,t) = os.path.split(p)
+  if len(h) < 1: return [t]+rest
+  if len(t) < 1: return [h]+rest
+  return _pathsplit(h,[t]+rest)
+
+def _commonpath(l1, l2, common=[]):
+  if len(l1) < 1: return (common, l1, l2)
+  if len(l2) < 1: return (common, l1, l2)
+  if l1[0] != l2[0]: return (common, l1, l2)
+  return _commonpath(l1[1:], l2[1:], common+[l1[0]])
+
+def relpath(p1, p2):
+  """Computes the relative path of p2 with respect to p1."""
+  (common,l1,l2) = _commonpath(_pathsplit(p1), _pathsplit(p2))
+  p = []
+  if len(l1) > 0:
+    p = [ '../' * len(l1) ]
+  p = p + l2
+  return os.path.join( *p )
+
+# /// end code snippet
+
+def path_split_all(p):
+  """Completely decompose a filename path into individual components
+  that can be rejoined later.
+  """
+  return _pathsplit(p)
+
+
+
+# - globbing
 
 def glob_files(filespec):
   '''Processes a glob string, or does nothing (pass-on only) if an iterable object
@@ -124,6 +184,56 @@ def glob_files(filespec):
     return sorted(glob.glob(filespec))
   else:
     raise ValueError, "Don't know how to glob for an object of " + type(filespec)
+
+
+# - file searches and filesystem scans
+
+def list_dir_entries(D, symlinks=False, sort=False):
+  """Returns a list of files (actually, non-dirs) and dirs in a given directory.
+  If symlinks == True, the symbolic links will be separated from the rest.
+  This routine builds upon os.listdir() routine.
+
+  Will return a 4-tuple, containing:
+
+    - dir entries
+    - regular file and other non-dir entries
+    - symlink dir entries
+    - symlink regular file and other non-dir entries
+
+  The latter two would be empty if symlinks == False.
+  """
+  from os.path import isdir, islink, join
+  entries = os.listdir(D)
+  dirs, nondirs = [], []
+  if symlinks:
+    s_dirs, s_nondirs = [], []
+  else:
+    s_dirs, s_nondirs = dirs, nondirs
+
+  rslt = {
+    # +-- symlink?
+    # v     v--- dir or not
+    False: { True: dirs, False: nondirs },
+    True: { True: s_dirs, False: s_nondirs },
+  }
+  for E in entries:
+    full_E = join(D,E)
+    rslt[bool(islink(full_E))][bool(isdir(full_E))].append(E)
+
+  if sort:
+    if not isinstance(sort, dict):
+      sort = {}
+
+    dirs.sort(**sort)
+    nondirs.sort(**sort)
+    if symlinks:
+      s_dirs.sort(**sort)
+      s_nondirs.sort(**sort)
+
+  if symlinks:
+    return (dirs, nondirs, s_dirs, s_nondirs)
+  else:
+    return (dirs, nondirs, [], [])
 
 
 def path_search(*specs, **opts):
@@ -219,12 +329,14 @@ def untar(archive, subdir=None, verbose=None, files=[]):
   if subdir:
     opts += [ "-C", subdir ]
 
-  if archive.endswith(".tar.bz2") or archive.endswith(".tbz2") or archive.endswith(".tbz"):
+  if archive.endswith(".tar.bz2") or archive.endswith(".tbz2") or archive.endswith(".tbz") or archive.endswith(".tb2"):
     opts.append("-j")
   elif archive.endswith(".tar.Z") or archive.endswith(".tar.gz") or archive.endswith(".tgz"):
     opts.append("-z")
-  elif archive.endswith(".tar.lzma") or archive.endswith(".tza"):
+  elif archive.endswith(".tar.lzma") or archive.endswith(".tza") or archive.endswith(".tlz"):
     opts.append("--use-compress-program=lzma")
+  elif archive.endswith(".tar.xz") or archive.endswith(".txz"):
+    opts.append("--use-compress-program=xz")
 
   if verbose:
     for i in xrange(verbose): opts.append("-v")

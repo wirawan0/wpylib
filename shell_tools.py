@@ -29,67 +29,12 @@ def mcd(subdir):
   mkdir("-p", subdir)
   os.chdir(subdir)
 
-def dirname2(path):
-  """Returns the directory part of a path.
-  The difference from os.path.dirname is that if the directory
-  part is empty, it is converted to '.' (the current directory)."""
-  d = os.path.dirname(path)
-  if d == '': d = '.'
-  return d
-
-def file_exists_nonempty(path):
-  """Determines whether a given path is a regular file of
-  nonzero size."""
-  return os.path.isfile(path) and os.stat(path).st_size > 0
-
-def is_executable_file(path):
-  """Determines whether a file exists and is executable.
-  This implements the "-x" action of the shell's test command.
-  """
-  # Ref: http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
-  return os.path.isfile(path) and os.access(path, os.X_OK)
-
 def provide_link(dest, src):
   """Checks if file `dest' exists. If it does not, provide for it by means
   of a softlink from `src'."""
   if not os.path.exists(dest):
     # strip trailing /'s just in case it exists
     os.symlink(src, dest.rstrip("/"))
-
-
-# The following 3 routines are from
-# http://code.activestate.com/recipes/208993-compute-relative-path-from-one-directory-to-anothe/
-# by Cimarron Taylor
-# (PSF license)
-
-def _pathsplit(p, rest=[]):
-  (h,t) = os.path.split(p)
-  if len(h) < 1: return [t]+rest
-  if len(t) < 1: return [h]+rest
-  return _pathsplit(h,[t]+rest)
-
-def _commonpath(l1, l2, common=[]):
-  if len(l1) < 1: return (common, l1, l2)
-  if len(l2) < 1: return (common, l1, l2)
-  if l1[0] != l2[0]: return (common, l1, l2)
-  return _commonpath(l1[1:], l2[1:], common+[l1[0]])
-
-def relpath(p1, p2):
-  """Computes the relative path of p2 with respect to p1."""
-  (common,l1,l2) = _commonpath(_pathsplit(p1), _pathsplit(p2))
-  p = []
-  if len(l1) > 0:
-    p = [ '../' * len(l1) ]
-  p = p + l2
-  return os.path.join( *p )
-
-# /// end code snippet
-
-def path_split_all(p):
-  """Completely decompose a filename path into individual components
-  that can be rejoined later.
-  """
-  return _pathsplit(p)
 
 
 # Globbing utilities:
@@ -100,6 +45,7 @@ def sorted_glob(pathname):#, cmp=None, key=None, reverse=None):
   rslt = glob.glob(pathname)
   rslt.sort() #cmp=cmp, key=key, reverse=reverse)
   return rslt
+
 
 # Environment variable utilities:
 
@@ -164,9 +110,12 @@ def quote_cmdline(seq):
   - word splitting
   - invocation of shell builtin (!!!)
   """
-  # Python 2.6's subprocess.py has list2cmdline, but I don't like it because
-  # it still allows the shell to interpret wildcards. We have to quote wildcards
-  # (*, [], {}, ?) and $ as well.
+  # Compared to other implementations:
+  # - Python 2.6's subprocess.py has list2cmdline, but I don't like it because
+  #   it still allows the shell to interpret wildcards. We have to quote wildcards
+  #   (*, [], {}, ?) and $ as well.
+  # - Python 3.3 has shlex.quote that performs similarly.
+  # The reverse operation can be done via shlex standard module.
   rslt = []
   for i in seq:
     inew = '"' + i.replace("\\", "\\\\").replace('"', '\\"').replace('$', '\\$').replace('`', '\\`') + '"'
