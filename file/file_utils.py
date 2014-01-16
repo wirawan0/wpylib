@@ -109,7 +109,9 @@ def open_input_file(fname, superize=0):
     return fobj
 
 
-# Miscellaneous functions
+# Miscellaneous functions:
+# - globbing
+# - file searches and scans
 
 
 def glob_files(filespec):
@@ -176,6 +178,32 @@ def path_search(*specs, **opts):
     raise ValueError, "Cannot find file with specified combination"
   else:
     return None
+
+
+def scan_directories(D, testdir):
+  """Recursively scans a directory tree for candidate of
+  relevant directories, where testdir(D,dirs,files)
+  return a True boolean value.
+
+  We will *not* follow symlinks.
+
+  The testdir function must have this kind of prototype:
+
+     testdir(D, dirs, files)
+
+  where:
+
+  - D (first positional argument) is the directory under consideration
+  - dirs (named argument) is a list containing all subdirectory entries
+    contained in D (symlinks or not).
+  - files (named argument) is a list containing all non-subdirectory
+    entries contained in D (other symlinks, files, pipes, sockets, etc).
+  """
+  rslt = []
+  for (d, dirs, files) in os.walk(D, topdown=True):
+    if testdir(d, dirs=dirs, files=files):
+      rslt.append(d)
+  return rslt
 
 
 def untar(archive, subdir=None, verbose=None, files=[]):
