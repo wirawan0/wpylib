@@ -107,6 +107,23 @@ def str_trunc_end(S, L):
   else:
     return S
 
+def str_lstrip(S, substr):
+  """Strips a prefix from S if it matches the string in `substr'.
+  """
+  # This is akin to ${VAR#$substr} in Bourne-shell dialect.
+  if len(substr) > 0 and S.startswith(substr):
+    return S[len(substr):]
+  else:
+    return S
+
+def str_rstrip(S, substr):
+  """Strips a suffix from S if it matches the string in `substr'.
+  """
+  # This is akin to ${VAR%$substr} in Bourne-shell dialect.
+  if len(substr) > 0 and S.endswith(substr):
+    return S[:-len(substr)]
+  else:
+    return S
 
 def str_save_to_file(filename, s1, *more_str, **opts):
   """Save one or more string (or iterables) to a file with a given file.
