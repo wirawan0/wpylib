@@ -30,3 +30,21 @@ def make_unbound_method(method):
     # Assume this is a static method or user-defined external method
     # injected into this class.
     return method
+
+
+def function_name(f):
+  """Returns the given name of a function (or callable object)."""
+  try:
+    # Regular function
+    return f.func_name
+  except:
+    pass
+  try:
+    # Instance method
+    return "%s.%s" % (f.im_class, f.im_func.func_name)
+  except:
+    pass
+  # Callable class instance:
+  return f.__class__.__name__
+
+
