@@ -266,12 +266,16 @@ def fit_func(Funct, Data=None, Guess=None, Params=None,
 
   if use_lmfit:
     if Params == None:
+      if debug >= 10:
+        print "No input Params given; creating unconstrained params"
       # Creates a default list of Parameters for use later
       assert Guess != False
       Params = Parameters()
       for (g,pn) in zip(Guess, param_names):
         Params.add(pn, value=g)
     else:
+      if debug >= 10:
+        print "Input Params specified; use them"
       if Guess == None or Guess == False:
         # copy the Params' values to Guess
         Guess = [ Params[pn].value for pn in param_names ]
