@@ -171,6 +171,27 @@ def path_split_all(p):
   return _pathsplit(p)
 
 
+def path_prep(*paths):
+  """Like os.path.join, except that the directory part is created \
+  on-the-fly as needed."""
+  from os.path import dirname, isdir, join
+  path = join(*paths)
+  d = dirname(path)
+  mkdir_p(d)
+  return path
+
+def mkdir_p(name):
+  """A pure python implementation of my shell favorite `mkdir -p' command.
+  To conform to that command's behavior, we will not issue an error
+  if the file name exists and is a directory.
+  Returns 1 if new directories are made, returns -1 if nothing is done."""
+  from os.path import isdir
+  if isdir(name):
+    return -1
+  else:
+    os.makedirs(name)
+    return 1
+
 
 # - globbing
 
