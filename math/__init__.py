@@ -8,7 +8,15 @@ pass
 
 import numpy
 
+
+class MathWarning(Warning):
+  """Base class for mathematics-related warnings for wpylib library.
+  """
+
+
+
 ZERO_TOL = 5.0e-16
+
 
 def ztol(val, tol=None, copy=True):
   """Rounds down values to zero if they are below tolerance."""
