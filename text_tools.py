@@ -57,9 +57,23 @@ def matrix_str(M, fmt="%22.15g", prefix="", suffix=""):
   return prefix + linesep.join([ " ".join([ fmt % c for c in R ]) for R in M ]) + suffix
 
 
+def str_indent(text, indent=" "*4):
+  """Indents a text block by a given prefix.
+  If the indent is a number 'N', a string of N white spaces are taken as
+  the prefix.
+
+  In python 3, textwrap.indent can accomplish the same thing."""
+  if not isinstance(indent, basestring):
+    # Assume this is a numeric:
+    indent = " " * indent
+  return indent + ('\n'+indent).join(x for x in str(text).splitlines())
+
 def str_unindent(S, amount=None):
   """Automatically unidents a string based on the first indentation found
-  on a nonempty string line. Assuming UNIX LF end-of-line."""
+  on a nonempty string line. Assuming UNIX LF end-of-line.
+
+  Note: textwrap.dedent accomplishes a similar function (but the amount of
+  white spaces to remove is automatically detected)."""
 
   if amount == None:
     nindent = -1  # autodetect, default
