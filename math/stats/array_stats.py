@@ -23,6 +23,14 @@ import numpy
 CONVENTIONS
 
 - Usually, M1 is the matrix under examination, M2 is the reference matrix.
+
+
+PRINCIPLES
+
+- Make sure functions are dimension-independent as much as possible
+  (i.e. not limited to 1D or 2D only).
+- Text output should not hardwired only to sys.stdout via vanilla print
+  statement.
 """
 
 def report_diff_stat(M1, M2, out=sys.stdout):
@@ -106,7 +114,7 @@ def maxadiff_by_col(M1, M2):
 
 def maxradiff(M1, M2, ztol=1e-15):
   # Original function name: maxrdiff
-  """Prints the maximum *relative* absolute difference between two matrices.
+  """Returns the maximum *relative* absolute difference between two matrices.
   Used for checking whether two matrices are identical.
 
   CAVEATS:
@@ -119,6 +127,29 @@ def maxradiff(M1, M2, ztol=1e-15):
   numpy.putmask(mref0, mref0 < ztol, [1.0])
   
   return (diff / mref0).max()
+
+
+def rdiff(M1, M2, ztol=1e-15, Abs=False):
+  """Returns the *relative* [absolute] difference between two matrices.
+  Used for checking whether two matrices are identical.
+  Here, M1 is the array being compared, and M2 is the reference array.
+
+  CAVEATS:
+  - Zero elements in M2 (reference matrix) are converted to unity for
+    calculating the relative difference.
+  """
+  from numpy import abs, array, asarray
+  (mapprox, mref) = (M1, M2)
+  if Abs:
+    diff = abs(asarray(mapprox) - asarray(mref))
+    mref0 = abs(asarray(mref))
+    numpy.putmask(mref0, mref0 < ztol, [1.0])
+  else:
+    diff = asarray(mapprox) - asarray(mref)
+    mref0 = array(mref, copy=True)  # must make a copy
+    numpy.putmask(mref0, abs(mref0) < ztol, [1.0])
+
+  return (diff / mref0)
 
 
 class ArrayStat(object):
