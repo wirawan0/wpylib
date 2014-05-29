@@ -86,6 +86,17 @@ def dict_join(*dicts):
     rslt.update(d)
   return rslt
 
+def dict_defval(p, key, val):
+  """For a dict-like object, sets a default value for the given key,
+  if that has not been defined in the object."""
+  if key not in p: p[key] = val
+
+def dict_defvals(p, q):
+  """For a dict-like object, sets multiple default values for the given keys
+  (q is an input dict containing the defaults)."""
+  for qk in q:
+    dict_defval(p, qk, q[qk])
+
 def list_join(*L):
   r = []
   for i in L:
