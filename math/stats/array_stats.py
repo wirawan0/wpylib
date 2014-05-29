@@ -33,6 +33,10 @@ PRINCIPLES
   statement.
 """
 
+def rms(m):
+  return numpy.sqrt(numpy.sum(m**2) / m.size)
+
+
 def report_diff_stat(M1, M2, out=sys.stdout):
   # Original function name: statdiff
   """Studies the difference of two arrays (or matrices).
