@@ -426,6 +426,11 @@ class Parameters(dict):
         a single dict.
         Caveat: This will also "disconnect" the created object from any changes
         done on the dicts in the search path.
+      - _skipframes_ (integer >= 1) = the number of stack frames to skip.
+        Default: 1, i.e. the immediate caller of the _create_ routine.
+        Warning: this is low-level hack; know what you are doing if you want
+        to use a different _skipframes_.
+        Usually this is needed only for internal routines.
 
     Cautions for using `_localvar_` option:
     1) The default is False because it can be very confusing!
@@ -445,11 +450,12 @@ class Parameters(dict):
     # Look up the stack of the calling function in order to retrieve its
     # local variables
     from inspect import stack
-    caller = stack()[1][0] # one frame up; element-0 is the stack frame
     _kwparam_ = _options_.get("_kwparam_", None)
     _userparam_ = _options_.get("_userparam_", None)
     _localvars_ = _options_.get("_localvars_", None)
     _flatten_ = _options_.get("_flatten_", False)
+    _skipframes_ = _options_.get("_skipframes_", 1)
+    caller = stack()[_skipframes_][0] # default is one frame up; element-0 is the stack frame
 
     if _kwparam_ == None: _kwparam_ = self._kwparam_
     if _userparam_ == None: _userparam_ = self._userparam_
@@ -521,5 +527,7 @@ def flatten_dict(D):
   """
   if isinstance(D, Parameters):
     return D._flatten_()
+  elif hasattr(D, "__flatten_dict__") and callable(D.__flatten_dict__):
+    return D.__flatten_dict__()
   else:
     return D
