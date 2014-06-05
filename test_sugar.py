@@ -8,6 +8,7 @@ def def_dict_data1():
   """
   global DN1, DN2
   global DN1_orig, DN2_orig
+  global DN3, DN3_orig
   DN1 = {
     'A': 'executive',
     'B': {
@@ -42,6 +43,16 @@ def def_dict_data1():
     },
   }
   DN2_orig = deepcopy(DN2)
+  DN3 = {
+    'C': {
+      'properties': dict(
+         nest1 = {
+           3: 4021,
+         },
+      ),
+    },
+  }
+  DN3_orig = deepcopy(DN3)
 
 
 
@@ -130,6 +141,31 @@ def test_dict_update_nested2():
   pprint(DN2)
 
 
+
+def test_dict_update_nested3():
+  """[20140605]
+  """
+  from wpylib.sugar import dict_update_nested
+  def_dict_data1()
+  DN1 = deepcopy(DN1_orig)
+  DN3 = deepcopy(DN3_orig)
+
+  print "test_dict_update_nested3():"
+  print "DN1:"
+  pprint(DN1)
+
+  print
+  print "DN3:"
+  pprint(DN3)
+
+  print
+  print "Update DN1 with DN3, nested:..."
+  dict_update_nested(DN1, DN3)
+  pprint(DN1)
+
+
+
+
 if __name__ == "__main__":
-  test_dict_update_nested1()
+  test_dict_update_nested3()
 
