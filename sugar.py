@@ -97,6 +97,25 @@ def dict_defvals(p, q):
   for qk in q:
     dict_defval(p, qk, q[qk])
 
+def dict_update_nested(p, q, max_nest=100000):
+  """Recursively copy-update dict p with the contents of q.
+  This is similar to dict.update() but will copy-update dict members instead of
+  only updating the dict refs.
+  Once a maximum nesting level is reached, simple ref updating is done,
+  as usual.
+  """
+  if max_nest <= 0:
+    dict.update(p, q)
+  else:
+    for (k,v) in dict.iteritems(q):
+      if isinstance(v, dict):
+        if (k not in p) or not isinstance(p[k], dict):
+          p[k] = {}
+        dict_update_nested(p[k], q[k], max_nest-1)
+      else:
+        p[k] = v
+
+
 def list_join(*L):
   r = []
   for i in L:
