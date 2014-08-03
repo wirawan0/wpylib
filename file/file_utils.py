@@ -1,7 +1,7 @@
 #!/usr/bin/python
 # $Id: file_utils.py,v 1.2 2010-09-27 19:54:29 wirawan Exp $
 #
-# pyqmc.utils.file_utils module
+# wpylib.file.file_utils module
 # File-manipulation utilities
 #
 # Wirawan Purwanto
@@ -15,6 +15,7 @@
 # 20100927: Moved to wpylib.file.file_utils .
 #
 """
+wpylib.file.file_utils
 Common file-manipulation utilities.
 
 This module is part of wpylib project.
