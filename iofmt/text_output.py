@@ -110,6 +110,10 @@ class text_output(object):
   def __del__(self):
     #print "Deleting object %s, file %s" % (self, self.out)
     self.close()
+  def __enter__(self):
+    return self
+  def __exit__(self, type, value, traceback):
+    self.close()
   def set_write_func(self, method):
     """Sets the default '_output' function to a python bound method.
     Always use this method, instead of setting self._output directly!
