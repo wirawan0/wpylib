@@ -125,6 +125,21 @@ def is_executable_file(path):
   # Ref: http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
   return os.path.isfile(path) and os.access(path, os.X_OK)
 
+def is_writable(path):
+  """Determines whether a path exists and is writable by the current user,
+  like the `test -w' shell command.
+  """
+  # Ref: http://stackoverflow.com/questions/2113427/determining-whether-a-directory-is-writeable
+  # Ref: http://stackoverflow.com/a/2113750/655885
+  return os.access(path, os.W_OK) # W_OK is for writing, R_OK for reading, etc.
+
+def is_readable(path):
+  """Determines whether a path exists and is readable by the current user,
+  like the `test -r' shell command.
+  """
+  return os.access(path, os.R_OK)
+
+
 def dirname2(path):
   """Returns the directory part of a path.
   The difference from os.path.dirname is that if the directory
