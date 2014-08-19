@@ -218,6 +218,32 @@ else:
       return p
 
 
+class logged_runner(object):
+  """Wrapper for wpylib.shell_tools.run() function.
+  Includes a customizable logging of the external command invocation."""
+  # Imported 20140802 from my check-git-vs-cvs.py tool. Original class name: Runner.
+  log_prefix = "run: "
+  def __init__(self, log=None):
+    if log == None:
+      from wpylib.iofmt.text_output import text_output
+      log = text_output(sys.stdout)
+    self.log = log
+  def log_run(self, prg, args):
+    """Logs the run command."""
+    self.log("%s%s%s\n" % (self.log_prefix, prg, "".join([ " %s" % a for a in args ])))
+  def __call__(self, prg, args):
+    self.log_run(prg, args)
+    return sh.run(prg, args)
+  def nofail(self, prg, args):
+    """Like wpylib.shell_tools.run(), but does not raise exception."""
+    self.log_run(prg, args)
+    retcode = subprocess.call((prg,) + tuple(args))
+    if retcode != 0:
+      self.log("%sretcode=%d\n" % (self.log_prefix, retcode))
+    return retcode
+
+
+
 # coreutils
 
 coreutils = """
