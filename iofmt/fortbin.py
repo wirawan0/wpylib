@@ -116,6 +116,7 @@ class fortran_bin_file(object):
 
   def byte_length(self, *fields):
     """Given a list of field descriptors, determine how many bytes this
+    set of fields would occupy.
     """
     expected_len = sum([ self.fld_count(f) * numpy.dtype(f[1]).itemsize
                            for f in fields ])
@@ -193,6 +194,41 @@ class fortran_bin_file(object):
         % (reclen2, reclen)
 
     return rslt
+
+  def bulk_read_array1(self, dtype, shape):
+    """Reads data that is regularly stored as an array of Fortran records
+    (all of the same type and length).
+    Each record must be 'read' individually and validated if the record lengths
+    are indeed correct.
+    But this routine will bulk-read all the records at once, and shape it
+    into an array with that format.
+
+    Warning: because we load all the leading and trailing reclen markers, the array
+    will be larger than the actual size of the data, and the memory will not be
+    contiguous.
+    Use copy_subarray below to create the contiguous representation of the data
+    (per field name).
+    """
+    from numpy import product, fromfile, all
+    dtype1 = numpy.dtype([('reclen', self.record_marker_type),
+                          ('content', dtype),
+                          ('reclen2', self.record_marker_type)])
+
+    dtype_itemsize = dtype1['content'].itemsize
+
+    size = product(shape) # total number of elements to read in bulk
+    # reads in *ALL* the records in a linear fashion, in one read stmt
+    arr = fromfile(self.F, dtype1, size)
+
+    if not all(arr['reclen'] == dtype_itemsize) \
+       or not all(arr['reclen2'] == dtype_itemsize):
+      raise IOError, \
+        (("Inconsistency detected in record array: " \
+          "one or more records do not have the expected record length=%d") \
+         % (dtype_itemsize,))
+
+    # Returns only the content--this WILL NOT be contiguous in memory.
+    return arr['content'].reshape(shape, order='F')
 
   def write_vals(self, *vals, **opts):
     """Writes a Fortran record.
@@ -313,5 +349,29 @@ def array_major_dim(arr):
     else:
       raise RuntimeError, \
         "Unable to determine whether this is a row or column major object."
+
+
+def copy_subarray(arr, key, order='F'):
+  """Given a numpy array of structured datatype, copy out a subarray field
+  into a new array with contiguous format.
+  The field accessed by arr[key] must be a fixed-size array.
+  The order argument can be either 'F' or 'C':
+  - For 'F' ordering, then the subarray index will become the *first* index.
+  - For 'C' ordering, then the subarray index will become the *last* index.
+  """
+  subarr = arr[key]
+  dim = len(arr.shape)
+  subdim = len(subarr.shape) - dim
+  if order == 'F':
+    rslt = numpy.transpose(subarr, axes=list(range(dim, subdim+dim) + range(dim)))
+  elif order == 'C':
+    rslt = subarr
+  else:
+    raise ValueError, 'Invalid order argument'
+  # Always return a copy!
+  if numpy.may_share_memory(rslt, arr):
+    return rslt.copy(order=order)
+  else:
+    return rslt
 
 
