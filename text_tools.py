@@ -16,6 +16,25 @@ Frequently used text tools.
 import numpy
 from wpylib.sugar import ifelse
 
+def read_text_table(F, maps={}, sep=None, comment_char="#"):
+  """Reads in a 2-D table from a text stream.
+  Returns a list of lists containing the table content, in each cell by
+  default as a string, unless a mapping function is provided (for simple
+  data conversion only)."""
+  rows = []
+  for L in F:
+    if comment_char != None:
+      L = L.split(comment_char,1)[0]
+    flds = L.split(sep)
+    if len(flds) == 0:
+      continue
+    if maps:
+      for i in xrange(len(flds)):
+        if i in maps:
+          flds[i] = maps[i](flds[i])
+    rows.append(flds)
+  return rows
+
 def make_matrix(Str, debug=None):
   """Simple tool to convert a string like
     '''1 2 3
