@@ -10,9 +10,10 @@ Various tools for arrays (mainly, numpy array objects).
 
 """
 
+import numpy
 
 def array_indices_cond_1d(arr, cond):
-  """Get the odered list of array indices whose corresponding elements satisfy
+  """Get the ordered list of array indices whose corresponding elements satisfy
   a given condition.
   Useful for conditional assignment or evaluation.
 
@@ -36,5 +37,27 @@ def array_indices_cond_1d(arr, cond):
   return numpy.array(xrange(len(arr)))[ cond ]
 
 
+def array_hstack(arrays):
+  """Creates a 2D array by horizontally stacking many arrays together
+  (along the array's second dimension).
+  Each of the input arrays can be a 1D or 2D array.
+  This function is similar to numpy.hstack.
+  """
+  from numpy import asarray, hstack
+  stk = []
+
+  for a1 in arrays:
+    a = asarray(a1)
+    dim = len(a.shape)
+    if dim == 1:
+      a = a.reshape((len(a),1))
+    elif dim == 2:
+      pass
+    else:
+      raise ValueError, "Won't take 3D, 4D, ... arrays"
+
+    stk.append(a)
+
+  return hstack(stk)
 
 
