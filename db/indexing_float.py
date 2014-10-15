@@ -76,6 +76,8 @@ def generate_float_indices(arr, rdiff_threshold, debug=0):
   a_sorted[0] = a_sorted[1] # dummy data
   a_diff = numpy.diff(a_sorted)  # == a_sorted[1:] - a_sorted[:-1]
   a_avg_abs = (numpy.abs(a_sorted[1:]) + numpy.abs(a_sorted[:-1])) * 0.5
+  # FIXME: handle case where a_avg_abs is truly ZERO -> in this case
+  # the abs should be 1.
   a_rdiff = numpy.abs(a_diff) / a_avg_abs
   # hack the first rdiff since this element *must* always be present,
   # so this trick marks it as "unique":
