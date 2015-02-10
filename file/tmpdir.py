@@ -32,7 +32,7 @@ import os.path
 import tempfile
 
 from warnings import warn
-from wpylib import shell_utils as sh
+from wpylib import shell_tools as sh
 
 _g = globals()
 _g.setdefault("TMPDIR", None)
@@ -46,24 +46,26 @@ def tmpdir():
   and return the created temporary directory name.
   For subsequent calls, the same temporary directory name is given again.
   """
+  from wpylib.file.file_utils import is_writable
   import atexit
   global TMPDIR, TMPDIR_ROOTS
   if TMPDIR != None: return TMPDIR
   tmproot = None
   # FIXME: site-specific hooks probably need to be set somewhere
   for d in list(TMPDIR_ROOTS) + [ os.getenv("TMP"), os.getenv("TMPDIR"), "/tmp", "/var/tmp" ]:
-    if d != None and os.path.isdir(d) and :
+    if d != None and os.path.isdir(d) and is_writable(d):
       tmproot = d
       break
   if not tmproot:
     warn("Cannot find suitable temporary directory root, using current directory.",
          RuntimeWarning)
     tmproot = os.getcwd()
-  TMPDIR = tempfile.mkdtemp(prefix=("%s/chkgit-%d" % (tmproot, os.getpid())))
+  TMPDIR = tempfile.mkdtemp(prefix=("%s/pytmp-%d" % (tmproot, os.getpid())))
 
   def tmpdir_exitfunc():
     global TMPDIR
     global TMPDIR_CLEANUP
+    print "TMPDIR_CLEANUP = ", TMPDIR_CLEANUP
     if TMPDIR != None and os.path.isdir(TMPDIR) and TMPDIR_CLEANUP:
       try:
         sh.rm("-rf", TMPDIR)
