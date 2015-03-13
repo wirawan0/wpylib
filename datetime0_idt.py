@@ -32,6 +32,7 @@ where:
 The time is always expressed in terms of UTC to eliminate ambiguity of
 time zone, daylight savings time, etc.
 CAVEAT: The resolution of the time is only on the order of millisecond.
+Linux OS, for example, allows resolution down to nanoseconds!
 
 This is a 17-decimal-digit integer, which fits in a 64-bit range (9.22e+18).
 
@@ -70,6 +71,26 @@ class idatetime(object):
     ])
     R.microsecond = R.millisecond * 1000
     return R
+
+  def join_values(self, R=None):
+    """Joins the values contained in data structure 'R' to create a
+    composite integer date.
+    This is the converse of function 'split_values'.
+    """
+    if R is None:
+      R = self.R
+    if hasattr(R, 'microsecond'):
+      millisecond = R.microsecond // 1000
+    elif hasattr(R, 'millisecond'):
+      millisecond = R.millisecond
+
+    return R.year   * 10000000000000 \
+         + R.month  * 100000000000 \
+         + R.day    * 1000000000 \
+         + R.hour   * 10000000 \
+         + R.minute * 100000 \
+         + R.second * 1000 \
+         + millisecond
 
   def to_datetime(self):
     """Converts the object value to standard python datetime object.

@@ -6,7 +6,7 @@ from time import localtime, gmtime, strftime
 
 from wpylib.datetime0_idt import idatetime
 from wpylib.datetime import utime_to_iso
-
+from pprint import pprint
 
 
 def test_idt_01():
@@ -17,6 +17,12 @@ def test_idt_01():
   idt = idatetime(iidt)
   print "integer value          = %+18d" % idt.idt
   print "iso8601 format         = %s" % idt.str_iso8601()
+  R = idt.split_values()
+  print("split values:")
+  pprint(R.__dict__)
+
+  iidt_rejoined = idt.join_values(R)
+  print("iidt rejoined          = %+18d" % iidt_rejoined)
 
 
 def test_u2i_01():
