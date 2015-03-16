@@ -15,6 +15,13 @@ wpylib.py.im_weakref
 Complement of weakref's weak reference for an instance method
 (whether bound or unbound).
 
+This trick is necessary if the bound instance method is to be attached
+to that instance's attribute list (e.g. on `instance.__dict__`),
+because otherwise a circular reference occurs:
+
+   bound_method -> instance -> bound_method (via __dict__)
+
+
 Original-source: Linux Screen Reader project
 Copied-from: http://mindtrove.info/python-weak-references/
 Date: 20110607
@@ -84,3 +91,34 @@ class im_ref(object):
     Inverse of __eq__.
     '''
     return not self.__eq__(other)
+
+
+class xbound_im_ref(im_ref):
+  '''A dirty hack to make an im_ref object where the callable can be
+  an instance method belonging to a completely different class, or
+  to an ordinary function.
+
+  CAUTION: Know what you are doing! In general, this is a haram trick.
+  This object is used for forced injection of an external method as
+  a class method.
+  We circumvent the standard class type-safety mechanism in python here:
+  if the `method` actually belongs to a completely unrelated class,
+  this routine still accepts it and allow the function to be called.
+  '''
+  def __init__(self, method, instance):
+    self.inst = weakref.ref(instance)
+    self.klass = instance.__class__
+
+    try:
+      self.func, im_class = method.im_func, method.im_class
+    except AttributeError:
+      # Assume this is a function defined outside a class, which is then
+      # injected into this instance.
+      # The first argument must be the usual `self` argument.
+      self.func = method
+
+  def __call__(self, *args, **kwargs):
+    if self.inst is not None and self.inst() is None:
+      raise ReferenceError, "Original object (of type %s) is already dead." % (self.klass)
+    return self.func(self.inst(), *args, **kwargs)
+
