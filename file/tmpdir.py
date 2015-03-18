@@ -29,6 +29,7 @@ But this must be added before the first tmpdir() function call.
 
 import os
 import os.path
+import sys
 import tempfile
 
 from warnings import warn
@@ -65,12 +66,20 @@ def tmpdir():
   def tmpdir_exitfunc():
     global TMPDIR
     global TMPDIR_CLEANUP
-    print "TMPDIR_CLEANUP = ", TMPDIR_CLEANUP
-    if TMPDIR != None and os.path.isdir(TMPDIR) and TMPDIR_CLEANUP:
-      try:
-        sh.rm("-rf", TMPDIR)
-      except:
-        warn("Failed to remove temporary directory %s" % TMPDIR)
+    #print "TMPDIR_CLEANUP = ", TMPDIR_CLEANUP
+    if TMPDIR != None and os.path.isdir(TMPDIR):
+      if TMPDIR_CLEANUP:
+        try:
+          sh.rm("-rf", TMPDIR)
+        except:
+          try:
+            sh.ls("-al", TMPDIR)
+          except:
+            pass
+          warn("Failed to remove temporary directory %s" % TMPDIR)
+      else:
+        pass
+        sys.stderr.write("wpylib.file.tmpdir: temp dir not cleaned up: %s\n" % TMPDIR)
   atexit.register(tmpdir_exitfunc)
 
   return TMPDIR
