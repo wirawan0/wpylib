@@ -12,6 +12,18 @@ wpylib.py.stdout_capture
 Capture tool for sys.stdout output, for interactive uses (primarily,
 so that the output from sys.stdout is recorded to an ipython log file).
 
+Example uses:
+
+1) redirecting stdout explicitly
+
+    from wpylib.py.stdout_capture import StdoutCapture
+    xstdout = StdoutCapture()
+    # the original command was: fc.calculate_and_print_energy(h, UHF_01, UHF_01, out=sys.stdout)
+    #                                                                            ^^^^^^^^^^^^^^
+    # this now becomes:
+    xstdout(fc.calculate_and_print_energy, h, UHF_01, UHF_01, out=xstdout.stdout)
+
+
 Original-source: `ipython_common.py`.
 """
 
@@ -19,7 +31,7 @@ import sys
 
 class StdoutCapture(object):
   """Capture tool for sys.stdout output, for interactive uses (primarily,
-so that the output from sys.stdout is recorded to an ipython log file).
+  so that the output from sys.stdout is recorded to an ipython log file).
 
   """
   class outfile_proxy(object):
