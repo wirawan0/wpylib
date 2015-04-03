@@ -19,6 +19,8 @@ import numpy.linalg
 from numpy import dot, trace
 from numpy.linalg import det, inv
 
+from .gram_schmidt import modgs
+
 MATMUL_USE_BLAS = False
 
 def matmul(*Mats, **opts):
