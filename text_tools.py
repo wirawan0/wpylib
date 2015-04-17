@@ -67,13 +67,40 @@ def vector_str(M, fmt="%22.15g", V=False, prefix="", suffix=""):
   else:
     return prefix + " ".join([ fmt % m for m in M ]) + suffix
 
-def matrix_str(M, fmt="%22.15g", prefix="", suffix=""):
+def matrix_str(M, fmt=None, prefix="", suffix=""):
+  """Prints a matrix in a textual format.
+  Applicable for integer, float, and complex 2-D arrays.
+
+  COMPLEX NUMBER SUPPORT
+
+  By default, we print in full precision and in python-friendly format, like:
+
+      (+3.200000000000000e+00+4.700000000000000e+00j)
+
+  To print in C++ and Fortran friendly format, use:
+
+      >>> A_str = text_tools.matrix_str(A, '(%+#22.15e,%+#22.15e)')
+
+  The resulting output will be:
+
+      (+3.200000000000000e+00,+4.700000000000000e+00)
+  """
   linesep = suffix + "\n" + prefix
   if isinstance(M, numpy.matrix):
     M = numpy.asarray(M)
+  elif not isinstance(M, numpy.ndarray):
+    M = numpy.asarray(M)
   if len(M.shape) != 2:
     raise ValueError, "Wrong shape: expecting a two-dimensional array."
-  return prefix + linesep.join([ " ".join([ fmt % c for c in R ]) for R in M ]) + suffix
+  if numpy.iscomplex(M[0,0]):
+    if fmt is None:
+      fmt = "(%+22.15e%+22.15ej)"
+    mkfmt = lambda z: fmt % (z.real, z.imag)
+    return prefix + linesep.join([ " ".join([ mkfmt(c) for c in R ]) for R in M ]) + suffix
+  else:
+    if fmt is None:
+      fmt = "%22.15g"
+    return prefix + linesep.join([ " ".join([ fmt % c for c in R ]) for R in M ]) + suffix
 
 
 def str_indent(text, indent=" "*4):
