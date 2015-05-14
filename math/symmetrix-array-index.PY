@@ -1,8 +1,12 @@
 # 20100427
 
 """
-Symmetric array layout (lower diagonal, Fortran column-major ordering):
-i >= j
+SYMMETRIC ARRAY LAYOUT (LOWER DIAGONAL, FORTRAN COLUMN-MAJOR ORDERING): i >= j
+------------------------------------------------------------------------------
+
+CONDITIONS:
+    1 <= j <= N
+    1 <= j <= i <= N
 
      ----> j
   |  (1,1)
@@ -125,7 +129,45 @@ def copy_over_array(N, arr_L):
   return rslt
 
 
+def print_mapping(Map):
+  keys = sorted(Map.keys())
+  for K in keys:
+    (i,j) = K
+    ij = Map[K]
+    print("( %4d, %4d )  %8d" % (i,j,ij))
+
+
+
 # These are the reference implementation:
+
+def LD_generate_ref_mapping(N):
+  """Reference mapping procedure for 'LD' format.
+
+      >>> LD_generate_ref_mapping(5)
+      {(1, 1): 1,
+       (2, 1): 2,
+       (2, 2): 6,
+       (3, 1): 3,
+       (3, 2): 7,
+       (3, 3): 10,
+       (4, 1): 4,
+       (4, 2): 8,
+       (4, 3): 11,
+       (4, 4): 13,
+       (5, 1): 5,
+       (5, 2): 9,
+       (5, 3): 12,
+       (5, 4): 14,
+       (5, 5): 15}
+  """
+  mapping = {}
+  ij = 1
+  for j in xrange(1, N+1):
+    for i in xrange(j, N+1):
+      mapping[(i,j)] = ij
+      ij += 1
+  return mapping
+
 
 def LD(i,j,N):
   """python equivalent of gafqmc_LD on nwchem-gafqmc integral
@@ -307,9 +349,13 @@ def Hack3_LD_enc_dec(N, print_all=False):
 """
 UPPER DIAGONAL IMPLEMENTATION
 
-j >= i
+CONDITIONS:
+    1 <= j <= N
+    1 <= i <= j
+    j >= i               (redundant)
+
 Should be easier (?)
-Symmetric array layout (lower diagonal, Fortran column-major ordering):
+Symmetric array layout (upper diagonal, Fortran column-major ordering):
 
 
      ----> j
@@ -359,6 +405,36 @@ Once we get the j, we can get the i value easily.
 iskip = i - j    (easy)
 jskip = (j+1) * (j+2) / 2 - 1
 """
+
+
+def UD_generate_ref_mapping(N):
+  """Reference mapping procedure for 'UD' format.
+
+      >>> UD_generate_ref_mapping(5)
+      {(1, 1): 1,
+       (1, 2): 2,
+       (1, 3): 4,
+       (1, 4): 7,
+       (1, 5): 11,
+       (2, 2): 3,
+       (2, 3): 5,
+       (2, 4): 8,
+       (2, 5): 12,
+       (3, 3): 6,
+       (3, 4): 9,
+       (3, 5): 13,
+       (4, 4): 10,
+       (4, 5): 14,
+       (5, 5): 15}
+  """
+  mapping = {}
+  ij = 1
+  for j in xrange(1, N+1):
+    for i in xrange(1, j+1):
+      mapping[(i,j)] = ij
+      ij += 1
+  return mapping
+
 
 def UD(i,j,N):
   """Translates a lower-diagonal index (ii <= jj) to linear index
@@ -510,4 +586,80 @@ def hack1_UD_enc_dec1(N):
           ("v" if i==iii and j==jjj else "X"))
   print ("ok" if ok else "NOT OK")
 
+
+###############################################################################
+
+
+"""
+SYMMETRIC ARRAY LAYOUT (LOWER DIAGONAL, C ROW-MAJOR ORDERING): i >= j
+------------------------------------------------------------------------------
+
+CONDITIONS:
+    i = 0..N-1
+    j = 0..i
+    0 <= i <= N
+    0 <= j <= i < N
+
+
+     ----> j
+  |  (1,1)
+i |  (2,1)   (2,2)
+  v  (3,1)   (3,2)   (3,3)
+       :       :       :
+     (N,1)   (N,2)   (N,3) ... (N,N)
+
+The linear index goes like this: (zero-based, per C convention)
+
+       0
+       1       2
+       3       4       5
+       :       :       :
+      ...     ...     ...   ... N*(N+1)/2-1
+
+
+The pseudocode of i,j -> ij translation goes like
+
+    ij = 0
+    mapping = {}
+    for i in range(N):
+        for j in range(i+1):
+            mapping[(i,j)] = ij
+            ij += 1
+
+
+The direct formula is easy:
+
+iskip = i*(i+1)/2
+jskip = j
+"""
+
+
+def LDC_generate_ref_mapping(N):
+  """Reference mapping procedure for 'LD' C-ordering format.
+
+      >>> LDC_generate_ref_mapping(5)
+      {(0, 0): 0,
+       (1, 0): 1,
+       (1, 1): 2,
+       (2, 0): 3,
+       (2, 1): 4,
+       (2, 2): 5,
+       (3, 0): 6,
+       (3, 1): 7,
+       (3, 2): 8,
+       (3, 3): 9,
+       (4, 0): 10,
+       (4, 1): 11,
+       (4, 2): 12,
+       (4, 3): 13,
+       (4, 4): 14}
+
+  """
+  mapping = {}
+  ij = 0
+  for i in xrange(N):
+    for j in xrange(i+1):
+      mapping[(i,j)] = ij
+      ij += 1
+  return mapping
 
