@@ -61,3 +61,27 @@ def array_hstack(arrays):
   return hstack(stk)
 
 
+def array_vstack(arrays):
+  """Creates a 2D array by vertically stacking many arrays together
+  (along the array's first dimension).
+  Each of the input arrays can be a 1D or 2D array.
+  This function is similar to numpy.vstack.
+  """
+  from numpy import asarray, vstack
+  stk = []
+
+  for a1 in arrays:
+    a = asarray(a1)
+    dim = len(a.shape)
+    if dim == 1:
+      a = a.reshape((1,len(a)))
+    elif dim == 2:
+      pass
+    else:
+      raise ValueError, "Won't take 3D, 4D, ... arrays"
+
+    stk.append(a)
+
+  return vstack(stk)
+
+
