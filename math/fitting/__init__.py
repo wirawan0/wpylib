@@ -104,7 +104,8 @@ def fit_func(Funct, Data=None, Guess=None, Params=None,
     N is the dimensionality of the domain, while
     M is the number of data points, whose count must be equal to the
     size of y data below.
-    For a 2-D fitting, for example, x should be a column array.
+    For a 2-D curve (y = f(x)) fitting, for example,
+    x should be a column array.
 
   An input guess for the parameters can be specified via Guess argument.
   It is an ordered list of scalar values for these parameters.
@@ -120,8 +121,8 @@ def fit_func(Funct, Data=None, Guess=None, Params=None,
   If "dy" is specified, then "w" is defined to be (1.0 / dy**2), per usual
   convention.
 
-  Inspect Poly_base, Poly_order2, and other similar function classes in this
-  module to see the example of the Funct function.
+  Inspect Poly_base, Poly_order2, and other similar function classes in the
+  funcs_poly module to see the example of the Funct function.
 
   The measurement (input) datasets, against which the function is to be fitted,
   can be specified in one of two ways:
@@ -209,7 +210,9 @@ def fit_func(Funct, Data=None, Guess=None, Params=None,
     # Try to provide an initial guess
     # This is an older version with y-only argument
     Guess = Funct.Guess(y)
-  elif Guess == None: # VERY OLD, DO NOT USE ANYMORE!
+  elif Guess == None:
+    # VERY OLD, DO NOT USE ANYMORE! Will likely not work for anythingnonlinear
+    # functions.
     Guess = [ y.mean() ] + [0.0, 0.0] * len(x)
 
   if use_lmfit:
@@ -471,7 +474,8 @@ class fit_func_base(object):
   - TODO: dict-like Guess should be made possible.
   - otherwise, the guess values will be used as the initial values.
 
-
+  Refer to various function objects in wpylib.math.fitting.funcs_simple
+  for actual examples of how to use and create your own fit_func_base object.
   """
   class multi_fit_opts(dict):
     """A class for defining default control parameters for different fit methods.
