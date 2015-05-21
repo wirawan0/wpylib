@@ -10,7 +10,8 @@ Implementation of 48-bit Linear Congruential pseudorandom number generator
 
 This RNG is used only for testing and regression purposes.
 
-
+This module contains a python implementation of the Fortran 'rannyu' function
+(including the hardcoded seed library).
 """
 
 from wpylib.math.random import rng_base
@@ -43,12 +44,51 @@ class lcg48(rng_base):
     self.m = 34522712143931  # 11**13
     self.update_seed(rannyu_seed_lib[index])
 
+
+class rannyu(lcg48):
+  """Simulation of Fortran rannyu method with support for normal
+  (Gaussian) PDF."""
+  def __init__(self, seed=None):
+    if seed==None:
+      seed = numpy.random.randint(102)+1
+    self.use_seed_lib(seed)
+  def normal(self, size):
+    rslt = numpy.empty(size)
+    size = numpy.product(rslt.shape)
+    for i in xrange(size):
+      rslt.flat[i] = GaussianRandom(self)
+    return rslt
+
+
+def GaussianRandom(rnd):
+  """Same implementation as in my perl or Fortran code.
+  rnd is a random number generator object (i.e. the rannyu object)."""
+  from numpy import sqrt, log
+  if not hasattr(rnd, "_gr_next_rnd"):
+    while True:
+      x = 2.0 * rnd() - 1.0
+      y = 2.0 * rnd() - 1.0
+      r2 = x*x + y*y
+      if 0.0 < r2 < 1.0: break
+
+    z = sqrt(-2.0 * log(r2) / r2)
+    rnd._gr_next_rnd = z * x  # v
+    return z * y   # u
+  else:
+    v = rnd._gr_next_rnd
+    del rnd._gr_next_rnd
+    return v
+
+
 def mkint48(N):
   """Generates a 48-bit number from four integers.
   Used for encoding conversion for legacy rannyu library."""
   return N[3] + (N[2] << 12) + (N[1] << 24) + (N[0] << 36)
 
+
 def split48(value):
+  """Splits a 48-bit integer into a 4-tuple of 12-bit integers.
+  """
   i4 = value & 0xFFF
   value >>= 12
   i3 = value & 0xFFF

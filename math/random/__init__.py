@@ -7,7 +7,7 @@
 import numpy
 
 class rng_base(object):
-  """Bas class for random number generator."""
+  """Base class for random number generator."""
 
 # Standard classes
 from wpylib.math.random.rng_lcg48 import lcg48
