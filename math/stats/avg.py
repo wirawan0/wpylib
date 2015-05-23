@@ -44,11 +44,11 @@ def get_sample_stats(a, weights=None, result=None):
   """
   from numpy import asarray, count_nonzero, product, sqrt, sum, nan
   a = asarray(a)
-  if result == None:
+  if result is None:
     r = weighted_stats()
   else:
     r = result
-  if weights == None:
+  if weights is None:
     r.s0 = product(a.shape)
     r.s1 = sum(a)
     r.s2 = sum(a**2)
