@@ -26,18 +26,19 @@ class harm_fit_func(fit_func_base):
 
   Functional form:
 
-      E0 + 0.5 * k * (x - re)**2
+      E0 + 0.5 * k * (x - r0)**2
 
-  Coefficients:
-  * C[0] = energy minimum
-  * C[1] = spring constant
-  * C[2] = equilibrium distance
+  Fitting parameters:
+  * C[0] = E0 = energy minimum
+  * C[1] = k  = spring constant
+  * C[2] = r0 = equilibrium distance
   """
   dim = 1  # a function with 1-D domain
   param_names = ('E0', 'k', 'r0')
   def __call__(self, C, x):
-    xdisp = (x[0] - C[2])
-    y = C[0] + 0.5 * C[1] * xdisp**2
+    E0, k, r0 = self.get_params(C, *(self.param_names))
+    xdisp = (x[0] - r0)
+    y = E0 + 0.5 * k * xdisp**2
     self.func_call_hook(C, x, y)
     return y
   def Guess_xy(self, x, y):
@@ -52,7 +53,7 @@ class harmcube_fit_func(fit_func_base):
 
   Functional form:
 
-      E0 + 0.5 * k * (x - re)**2 + cub * (x - re)**3;
+      E0 + 0.5 * k * (x - re)**2 + c3 * (x - re)**3;
 
   Coefficients:
   * C[0] = energy minimum
@@ -63,8 +64,9 @@ class harmcube_fit_func(fit_func_base):
   dim = 1  # a function with 1-D domain
   param_names = ('E0', 'k', 'r0', 'c3')
   def __call__(self, C, x):
-    xdisp = (x[0] - C[2])
-    y = C[0] + 0.5 * C[1] * xdisp**2 + C[3] * xdisp**3
+    E0, k, r0, c3 = self.get_params(C, *(self.param_names))
+    xdisp = (x[0] - r0)
+    y = E0 + 0.5 * k * xdisp**2 + c3 * xdisp**3
     self.func_call_hook(C, x, y)
     return y
   def Guess_xy(self, x, y):
@@ -82,13 +84,13 @@ class morse2_fit_func(fit_func_base):
 
   Functional form:
 
-      E0 + 0.5 * k / a**2 * (1 - exp(-a * (x - re)))**2
+      E0 + 0.5 * k / a**2 * (1 - exp(-a * (x - r0)))**2
 
   Coefficients:
-  * C[0] = energy minimum
-  * C[1] = spring constant
-  * C[2] = equilibrium distance
-  * C[3] = nonlinear constant
+  * C[0] = E0 = energy minimum
+  * C[1] = k  = spring constant
+  * C[2] = r0 = equilibrium distance
+  * C[3] = a  = nonlinear constant
   """
   dim = 1  # a function with 1-D domain
   param_names = ('E0', 'k', 'r0', 'a')
@@ -116,21 +118,23 @@ class ext3Bmorse2_fit_func(fit_func_base):
 
   Functional form:
 
-      E0 + 0.5 * k / a**2 * (1 - exp(-a * (x - re)))**2
-         + C3 * (1 - exp(-a * (x - re)))**3
+      E0 + 0.5 * k / a**2 * (1 - exp(-a * (x - r0)))**2
+         + C3 * (1 - exp(-a * (x - r0)))**3
 
   Coefficients:
-  * C[0] = energy minimum
-  * C[1] = spring constant
-  * C[2] = equilibrium distance
-  * C[3] = nonlinear constant
-  * C[4] = coefficient of cubic term
+  * C[0] = E0 = energy minimum
+  * C[1] = k  = spring constant
+  * C[2] = r0 = equilibrium distance
+  * C[3] = a  = nonlinear constant
+  * C[4] = C3 = coefficient of cubic term
   """
   dim = 1  # a function with 1-D domain
+  param_names = ('E0', 'k', 'r0', 'a', 'C3')
   def __call__(self, C, x):
     from numpy import exp
-    E = 1 - exp(-C[3] * (x[0] - C[2]))
-    y = C[0] + 0.5 * C[1] / C[3]**2 * E**2 + C[4] * E**3
+    E0, k, r0, a, C3 = self.get_params(C, *(self.param_names))
+    E = 1 - exp(-a * (x[0] - r0))
+    y = E0 + 0.5 * k / a**2 * E**2 + C3 * E**3
     self.func_call_hook(C, x, y)
     return y
   def Guess_xy(self, x, y):
