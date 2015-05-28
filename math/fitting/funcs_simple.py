@@ -15,6 +15,7 @@ For use with OO-style x-y curve fitting interface.
 """
 
 import numpy
+from wpylib.math.fitting import fit_func_base
 
 
 # Some simple function fitting--to aid fitting the complex ones later
@@ -114,7 +115,7 @@ class linear_leastsq_fit_func(linear_fit_func):
     # Changed from:
     #   rslt = fit_linear_weighted(x,y,dy)
     # to:
-    rslt = (x, y, sigma=None)
+    rslt = linregr2d_SZ(x, y, sigma=dy)
 
     self.last_fit = rslt[1]
     # Retrofit for API compatibility: not necessarily meaningful
@@ -137,6 +138,7 @@ class exp_fit_func(fit_func_base):
   """
   dim = 1  # a function with 1-D domain
   param_names = ['A', 'B', 'x0']
+  # FIXME: AD HOC PARAMETERS!
   A_guess =  -2.62681
   B_guess =  -9.05046
   x0_guess = 1.57327
@@ -182,6 +184,7 @@ class powx_fit_func(fit_func_base):
   """
   dim = 1  # a function with 1-D domain
   param_names = ['A', 'B', 'x0']
+  # FIXME: AD HOC PARAMETERS!
   A_guess =  -2.62681
   B_guess =  -9.05046
   x0_guess = 1.57327

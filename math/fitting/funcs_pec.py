@@ -11,10 +11,13 @@
 wpylib.math.fitting.funcs_pec module
 A library of simple f(x) functions for PEC fitting
 
-For use with OO-style x-y curve fitting interface.
+For use with the OO-style x-y curve fitting interface
+(fit_func_base).
 """
 
 import numpy
+from wpylib.math.fitting import fit_func_base
+from wpylib.math.fitting.funcs_simple import fit_harm
 
 
 class harm_fit_func(fit_func_base):
@@ -99,7 +102,7 @@ class morse2_fit_func(fit_func_base):
     imin = numpy.argmin(y)
     harm_params = fit_harm(x[0], y)
     if self.debug >= 10:
-      print "Initial guess by fit_harm gives: ", harm_params
+      print("Initial guess by fit_harm gives: %s" % (harm_params,))
     self.guess_params = (y[imin], harm_params[0][1], x[0][imin], 0.01 * harm_params[0][1])
     return self.guess_params
   def Guess_xy_old(self, x, y):
@@ -134,7 +137,7 @@ class ext3Bmorse2_fit_func(fit_func_base):
     imin = numpy.argmin(y)
     harm_params = fit_harm(x[0], y)
     if self.debug >= 10:
-      print "Initial guess by fit_harm gives: ", harm_params
+      print("Initial guess by fit_harm gives: %s " % (harm_params,))
     self.guess_params = (y[imin], harm_params[0][1], x[0][imin], 0.01 * harm_params[0][1], 0)
     return self.guess_params
 

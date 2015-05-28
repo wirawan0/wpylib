@@ -15,6 +15,7 @@ For use with OO-style x-y curve fitting interface.
 """
 
 import numpy
+from wpylib.math.fitting import fit_func_base
 
 
 class FermiDirac_fit_func(fit_func_base):

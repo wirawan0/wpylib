@@ -490,7 +490,7 @@ class fit_func_base(object):
     leastsq=dict(xtol=1e-8, epsfcn=1e-6),
   )
   fit_default_opts["lmfit:leastsq"] = dict(xtol=1e-8, epsfcn=1e-6)
-  debug = 1
+  debug = 0
   dbg_params = 1
   fit_method = 'fmin'
   fit_opts = fit_default_opts
