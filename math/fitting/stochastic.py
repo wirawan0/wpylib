@@ -15,11 +15,25 @@ wpylib.math.fitting.stochastic module
 Tools for stochastic curve fitting.
 """
 
+import numpy
+import numpy.random
+
 from wpylib.math.fitting import fit_func_base
+from wpylib.math.stats.errorbar import errorbar
 
 
 class StochasticFitting(object):
   """Standard stochastic fit procedure.
+
+  Class attributes:
+
+  * `func`: function ansatz to be fitted.
+    Set via init_func() method.
+    This `func` needs to be a descendant of the fit_func_base object,
+    or have an identical API, which are:
+
+    - method `fit`
+    - method `__call__` (i.e. a callable object)
 
   """
   debug = 0
@@ -42,19 +56,17 @@ class StochasticFitting(object):
     - the uncertainty of the target points, dy
 
     """
-    x = fit_func_base.domain_array(x)
-    if not (len(x[0]) == len(y) == len(dy)):
-      raise TypeError, "Length of x, y, dy arrays are not identical."
-
     # fix (or, actually, provide an accomodation for) a common "mistake"
     # for 1-D domain: make it standard by adding the "first" dimension
-    if len(x.shape) == 1:
-      x = x.reshape((1, x.shape[0]))
+    x = fit_func_base.domain_array(x)
 
     self.samples_x = x
     self.samples_y = numpy.array(y)
     self.samples_dy = numpy.array(dy)
     self.samples_wt = (self.samples_dy)**(-2)
+
+    if not (len(x[0]) == len(y) == len(dy)):
+      raise TypeError, "Length of x, y, dy arrays are not identical."
 
   def init_rng(self, seed=None, rng_class=numpy.random.RandomState):
     """Initializes a standard random number generator for use in
@@ -94,7 +106,8 @@ class StochasticFitting(object):
     raise RuntimeError, "Cannot determine the number of fit parameters."
 
   def nlfit1(self):
-    """Performs the non-stochastic, standard nonlinear fit."""
+    """Performs the non-stochastic, standard nonlinear fit.
+    The output is given in `nlf_rec` attribute."""
     from numpy.linalg import norm
 
     if self.use_dy_weights:
