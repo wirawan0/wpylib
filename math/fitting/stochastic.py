@@ -397,7 +397,7 @@ class StochasticFitting(object):
       # Formatted as an array of "errorbar" objects
       final_mc_curve = numpy.array([errorbar(y,dy) for (y,dy) in final_mc_curve], dtype=errorbar)
     else:
-      raise ValueError, "Unsupported outfmt value=%s." % (outfmt)
+      raise ValueError, "Unsupported outfmt value=%s." % (outfmt,)
     return final_mc_curve
 
   def mcfit_dump_param_samples(self, out):
@@ -411,6 +411,97 @@ class StochasticFitting(object):
                                     [ self.mc_stats[k] for k in snames ] + \
                                     [ self.log_mc_funcalls]),
                        " %#17.10g")+ "\n")
+
+
+
+def plot_curve_errorbar(sfit, fig=None, fig_axis=0,
+                        len_plot_x=None,
+                        colors=('0.80', 'red', 'green'),
+                        keys=('Stochastic fit', 'Experiment', 'Deterministic'),
+                        title='Comparing fits: stochastic vs deterministic'):
+  """Plots the curve with errorbar & final MC fit of the curve.
+  The input object is the MC fitting output (a StochasticFitting object).
+
+  This routine draws the stochastic fit result (shade, midpoint)
+  together with the raw y +/- dy data (if available) and
+  the deterministic nonlinear fit.
+
+  The `colors` is a 3-tuple argument controlling the color and
+  possibly other attributes of each plot.
+  Each tuple member can be a valid color argument (original way), or a dict
+  (more control).
+  Set this to None if you want to turn off a plot."""
+  from matplotlib import pyplot
+
+  if fig == None:
+    fig = pyplot.figure()
+    fig.clf()
+    ax = fig.add_subplot(1, 1, 1)
+    ax.set_title(title)
+  else:
+    ax = fig.axes[fig_axis]
+
+  samples_x = sfit.samples_x[0]
+  samples_xmin = samples_x.min()
+  samples_xmax = samples_x.max()
+  samples_xrange = samples_xmax - samples_xmin
+  if len_plot_x == None:
+    len_plot_x = 4*len(samples_x)
+  plot_x = numpy.linspace(start=samples_xmin - 0.03 * samples_xrange,
+                          stop=samples_xmax + 0.03 * samples_xrange,
+                          num=len_plot_x,
+                          endpoint=True).reshape((1,len_plot_x))
+
+  #make_curve_errorbar(sfit, plot_x)
+  # -> use mcfit_eval instead:
+  final_mc_curve = sfit.mcfit_eval(x=plot_x)
+  mc_y = final_mc_curve['val']
+  mc_dy = final_mc_curve['err']
+  # save info on axis class (!!!)
+  ax._plot_mc_curve_x = plot_x[0]
+  ax._plot_mc_curve_y = final_mc_curve
+  if False:
+    print plot_x[0]
+    print mc_y
+    global dbg
+    dbg = struct()
+    dbg.x = plot_x[0]
+    dbg.y = mc_y
+
+  def colordict(c, **defaults):
+    cdict = defaults.copy()
+    if isinstance(c, dict):
+      cdict.update(c)
+    else:
+      cdict.update(color=c)  # old default--scalar is a color argument.
+    return cdict
+
+  # *1* Smooth plot (the stochastic fit result), errorbar shading:
+  if colors[0] is not None:
+    ax.fill_between(x=plot_x[0], y1=mc_y-mc_dy, y2=mc_y+mc_dy, **colordict(colors[0], alpha=0.55))
+    #print "colordict = ", colordict(colors[0], alpha=0.55)
+
+  # *2* Smooth plot (the stochastic fit result), mid-points only (no connecting line):
+  if colors[1] is not None:
+    ax.plot(plot_x[0], mc_y, 'x', label=keys[0], **colordict(colors[1]))
+  #ax.errorbar(x=plot_x[0], y=mc_y, yerr=mc_dy, fmt='+-', label='Stochastic fit')
+
+  # *3* Raw data point:
+    if hasattr(sfit, "samples_y") and hasattr(sfit, "samples_dy"):
+      ax.errorbar(x=samples_x, y=sfit.samples_y, yerr=sfit.samples_dy,
+                  fmt="o", label=keys[1],
+                  **colordict(colors[1]))
+
+  if colors[2] is not None:
+    # *4* Smooth plot, line from deterministic fitting
+    # This will significantly differ from *2* if the stochastic plot fails.
+    nlf_y = sfit.func(sfit.log_nlf_params, plot_x)
+    ax.plot(plot_x[0], nlf_y, label=keys[2],
+            **colordict(colors[2]))
+
+  ax.legend()
+
+  return fig
 
 
 
