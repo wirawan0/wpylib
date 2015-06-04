@@ -41,8 +41,8 @@ The following methods are currently supported for scipy.optimize:
 
 See the documentation of `scipy.optimize` for more details.
 The `fmin` algorithm is the slowest although it is fairly foor proof to
-converge it (it may take many iterations).
-The leastsq` algorithm is the best but it requires parameter guess that is
+converge it (it may take very many iterations).
+The `leastsq` algorithm is the best, but it requires parameter guess that is
 reasonable.
 I don't have much success with `anneal`--it seems to behave erratically in
 my limited experience. YMMV.
@@ -492,7 +492,7 @@ class fit_func_base(object):
   fit_default_opts["lmfit:leastsq"] = dict(xtol=1e-8, epsfcn=1e-6)
   debug = 0
   dbg_params = 1
-  fit_method = 'fmin'
+  fit_method = 'leastsq'  # changed 20150529 from fmin. Leastsq is much faster.
   fit_opts = fit_default_opts
   #fit_opts = dict(xtol=1e-5, maxfun=100000, maxiter=10000, disp=0)
   def fit(self, x, y, dy=None, fit_opts=None, Funct_hook=None, Guess=None):
