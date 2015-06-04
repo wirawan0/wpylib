@@ -128,10 +128,10 @@ class text_input(object):
     return self.next_(self)
 
   def seek_text(self, regex=None, match=None):
-    '''Seeks the file until a particular piece text is encountered.
+    """Seeks the file until a particular piece text is encountered.
     We ignore all comments.
     The `regex' argument can be either a regex string or a standard python
-    regular expression object.'''
+    regular expression object."""
 
     if regex:
       if isinstance(regex, basestring):
@@ -348,4 +348,94 @@ def tail(filename, maxlines):
   except StopIteration:
     pass
   return out[-maxlines:]
+
+
+
+# More tools for extracting data from table-like text stream/string.
+
+tbl_filter_num1_rx = re.compile('^\s*[-+]?(?:[0-9]+|[0-9]+\.|\.[0-9]+|[0-9]+\.[0-9]+)(?:[EeDd][-+]?[0-9]+)?')
+def tbl_filter_num1(flds, col=0, **args):
+  """Simple filter function: given a list of splitted text in `flds`,
+  if the col-th field of the row is a numerical
+  string, then it is a valid row; otherwise we will ignore this row.
+  """
+  return tbl_filter_num1_rx.match(flds[col])
+
+
+def filter_table_text(T, filter=tbl_filter_num1, filter_args={}):
+  """Filters out irrelevant text (junk) from the table by commenting them out.
+  Using the default filter, we assume that the target column (default==0)
+  is a numerical value (usually a geometry value or a similar parameter).
+
+  Input:
+  * T = a text table (a multi-line string, with the linebreaks)
+  * filter = a filter function
+  * filter_args = dict-style arguments for the filter function."""
+  Lines = T.splitlines()
+  for (i,L) in enumerate(Lines):
+    F = L.split()
+    if len(F) == 0:
+      pass
+    elif not F[0].startswith("#") and not filter(F, **filter_args):
+      Lines[i] = "#" + L
+  return "\n".join(Lines)
+
+
+class tbl_filter_num1_limited_range(object):
+  """Fancy filtering: Assume that the first column is numerical
+  (e.g., rbond); and only include rows where this `rbond` fall
+  within a given range.
+  """
+  def __init__(self, rmin, rmax, col=0):
+    self.rmin, self.rmax = rmin, rmax
+    self.col = col
+  def __call__(self, flds, **args):
+    if tbl_filter_num1_rx.match(flds[self.col]):
+      r = float(flds[0])
+      return self.rmin <= r <= self.rmax
+    else:
+      return False
+  def mk_table_filter(self):
+    return lambda T: filter_table_text(T,filter=self)
+  @classmethod
+  def create(cls, rmin, rmax, col=0):
+    o = cls(rmin, rmax, col=col)
+    func = o.mk_table_filter()
+    func.__name__ = "%s.create(%.4f,%.4f,%d)" \
+                  % (cls.__name__, rmin, rmax, col)
+    return func
+
+
+def read_table(F, maps={}):
+  """Reads in a 2-D table from a text stream.
+  Returns a list of lists containing the table content, in each cell by
+  default as a string, unless a mapping function is provided (for simple
+  data conversion only).
+
+  This is a legacy tool. It appears that numpy.genfromtxt can do what
+  this tool can do, and better.
+  You should probably check if numpy.genfromtxt can do the required job
+  before using read_table/read_table_text provided in this module.
+  """
+  rows = []
+  comment_char = "#"
+  for L in F:
+    L = L.split(comment_char,1)[0]
+    flds = L.split()
+    if len(flds) == 0:
+      continue
+    if maps:
+      for i in xrange(len(flds)):
+        if i in maps:
+          flds[i] = maps[i](flds[i])
+    rows.append(flds)
+  return rows
+
+
+def read_table_text(txt, maps={}):
+  """Reads in a 2-D table from a text stream.
+  The text (as a whole string) is given in the txt argument.
+  """
+  from StringIO import StringIO
+  return read_table(StringIO(txt), maps)
 
