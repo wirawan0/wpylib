@@ -26,7 +26,7 @@ def setup_MC_TZ():
 
 
 
-def test_fit_PEC_MC_TZ(show_samples=True, save_fig=False):
+def test_fit_PEC_MC_TZ(show_samples=True, save_fig=False, rng=None, num_iter=200):
   """20150528
   PEC fitting, using `morse2` functional form.
 
@@ -55,6 +55,33 @@ def test_fit_PEC_MC_TZ(show_samples=True, save_fig=False):
       Final parameters          : -2.187(10)  9.85(61)  1.8044(66)  1.864(83)
       Total execution time = 0.55 secs
       All testings passed.
+
+  Where the input variables are:
+    x     = bond length (angstrom)
+    y, dy = binding energy (eV)
+  and the final (output) parameters are (in the same order as above):
+    Ebind = binding energy minimum (eV)
+    k     = spring constant (eV/angstrom**2)
+    r0    = equilibrium bond length (angstrom)
+    a     = morse2 nonlinear constant (angstrom**-1)
+
+  The guess params from NLF above are the same as what gnuplot fitting
+  routine gives, which are:
+
+      Final set of parameters            Asymptotic Standard Error
+      =======================            ==========================
+
+      E0              = -2.18626         +/- 0.03193      (1.46%)
+      k               = 9.82591          +/- 1.59         (16.19%)
+      re              = 1.80454          +/- 0.01763      (0.9771%)
+      a               = 1.86206          +/- 0.2172       (11.66%)
+
+  Nonlinear-fitting.pl (perl script) gives the stochastic fit result:
+
+      -2.183(11)  9.97(65)  1.8046(69)  1.886(90)
+
+  Excellent agreement!
+
   """
   from numpy import array
   from wpylib.text_tools import matrix_str, str_indent
@@ -70,7 +97,8 @@ def test_fit_PEC_MC_TZ(show_samples=True, save_fig=False):
 
   # parameters etc
   ansatz = morse2_fit_func()
-  rng = dict(seed=378711, rng_class=numpy.random.RandomState)
+  if rng is None:
+    rng = dict(seed=378711, rng_class=numpy.random.RandomState)
   rawdata = Cr2_TZ_data_20140728uhf
   sfit = MC_TZ_PEC_fit = StochasticFitting()
 
@@ -90,7 +118,7 @@ def test_fit_PEC_MC_TZ(show_samples=True, save_fig=False):
 
   with Timer() as tmr:
     sfit.mcfit_loop_begin_()
-    sfit.mcfit_loop1_(num_iter=200, save_fig=save_fig)
+    sfit.mcfit_loop1_(num_iter=num_iter, save_fig=save_fig)
     sfit.mcfit_loop_end_()
     sfit.mcfit_analysis_()
     sfit.mcfit_report_final_params()
