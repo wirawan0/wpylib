@@ -38,6 +38,8 @@ class StochasticFitting(object):
   """
   debug = 0
   dbg_guess_params = True
+  # opt_mcfit_fig_dir: specify subdir for saving figures
+  opt_mcfit_fig_dir = "."
   def_opt_report_final_params = 3
   def __init__(self):
     self.use_nlf_guess = 1
@@ -202,7 +204,9 @@ class StochasticFitting(object):
     samples_dy_max = numpy.max(self.samples_dy)
     ax.set_ylim((samples_ymin - samples_dy_max * 8, samples_ymax + samples_dy_max * 8))
     if save:
-      self.fig.savefig("mcfit-%04d.png" % self.mcfit_iter_num)
+      import os.path
+      self.fig.savefig(os.path.join(self.opt_mcfit_fig_dir,
+                                    "mcfit-%04d.png" % self.mcfit_iter_num))
 
   def mcfit_loop_begin_(self):
     """Performs final initialization before firing up mcfit_loop_.
@@ -304,19 +308,19 @@ class StochasticFitting(object):
   def mcfit_run1(self, x=None, y=None, dy=None, data=None, func=None, rng_params=None,
                  num_iter=100, save_fig=False):
     """The main routine to perform stochastic fit."""
-    if data != None:
+    if data is not None:
       raise NotImplementedError
-    elif dy != None:
+    elif dy is not None:
       # Assume OK
       pass
-    elif y != None and dy == None:
+    elif y is not None and dy is None:
       y_orig = y
       y = errorbar_mean(y_orig)
       dy = errorbar_err(y_orig)
     else:
       raise TypeError, "Invalid argument combination for the input data."
 
-    if func != None:
+    if func is not None:
       self.init_func(func)
     if not hasattr(self, "func"):
       raise RuntimeError, \
@@ -325,7 +329,7 @@ class StochasticFitting(object):
                       y=y,
                       dy=dy,
                     )
-    if rng_params != None:
+    if rng_params is not None:
       self.init_rng(**rng_params)
     elif not hasattr(self, "rng"):
       self.init_rng()
@@ -345,7 +349,7 @@ class StochasticFitting(object):
     """Evaluates the curve (y) values for a given set of x value(s).
     This routine generates the raw values based on the stochastically
     sampled parameter values."""
-    if x == None:
+    if x is None:
       x = self.samples_x
     else:
       x = fit_func_base.domain_array(x)
