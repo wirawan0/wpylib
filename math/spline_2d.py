@@ -15,7 +15,7 @@ class spline_2d:
   Input parameters:
 
   - s: smoothing of the spline curve. The default is 0,
-    which means plain interpolation, no no extra smoothing.
+    which means plain interpolation, no extra smoothing.
     If s > 0, then some smoothing is performed, and the
     curve represents an approximation of the input x,y
     curve.
