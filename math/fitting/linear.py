@@ -7,7 +7,7 @@
 """
 wpylib.math.fitting.linear module
 
-Linear fitting tools.
+Fitting tools for linear curve.
 """
 
 import numpy
