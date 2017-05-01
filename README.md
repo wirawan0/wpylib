@@ -38,7 +38,7 @@ Here is an incomplete list of the tools contained in `wpylib`:
 
 ## Author
 
-Wirawan Purwanto <wirawan0 at gmail.com> .
+Wirawan Purwanto, `wirawan0 at gmail.com` .
 
 This library was a byproduct of my research activity at
 the College of William and Mary,
