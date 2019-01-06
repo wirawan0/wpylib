@@ -9,6 +9,7 @@
 # FIXME TODO LIST:
 # - needs to detect 'python -i' presence in case of python <= 2.5.
 
+from __future__ import print_function
 import atexit
 import inspect
 import os
@@ -46,7 +47,7 @@ def get_global_namespace_(global_ns):
 
   if False: # for debugging only
     pprint.pprint(stack())
-    print "caller_info = ",
+    print("caller_info = ", end=" ")
     pprint.pprint(caller_info)
     pprint (sorted(g.keys()))
     pprint (g['__builtins__'])
@@ -120,9 +121,9 @@ def init_interactive(use_readline=True, global_ns=None):
       try:
         import readline
       except ImportError:
-        print >>MSGLOG, "Module readline not available."
+        print("Module readline not available.", file=MSGLOG)
       else:
-        print "Loading classic readline/rlcompleter."
+        print("Loading classic readline/rlcompleter.")
         import rlcompleter
         readline.parse_and_bind("tab: complete")
  
