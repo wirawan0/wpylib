@@ -18,7 +18,8 @@ try:
   has_subprocess = True
 except:
   if "has_subprocess" not in globals():
-    print >>sys.stderr, "Newer subprocess module does not exist, using older interfaces."
+    sys.stderr.write("Newer subprocess module does not exist, using older interfaces.\n")
+    sys.stderr.flush()
   has_subprocess = False
 
 
@@ -85,8 +86,9 @@ def getenv(*names, **opts):
   if "default" in opts:
     return opts["default"]
   else:
-    raise KeyError, \
+    raise KeyError(
       "Cannot find value among environment variables: %s" % (str(names))
+    )
 
 # Low-level utilities:
 
@@ -94,12 +96,13 @@ def errchk(cmd, args, retcode):
   """Checking for error after the invocation of an external command."""
   if retcode == 0: return
 
-  print >>sys.stderr, "Error executing ", cmd, " ".join(args)
+  sys.stderr.write("Error executing " + cmd + " " + join(args) + "\n")
+  sys.stderr.flush()
   if retcode < 0:
     err = "Command %s was terminated by signal %d" % (cmd, -retcode)
   else:
     err = "Command %s returned %d" % (cmd, retcode)
-  raise RuntimeError, err
+  raise RuntimeError(err)
 
 
 def quote_cmdline(seq):
