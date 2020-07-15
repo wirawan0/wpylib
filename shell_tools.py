@@ -155,23 +155,51 @@ if has_subprocess:
     errchk(cmdline, (), retcode)
     return 0
 
-  def pipe_out(args, split=False, shell=False):
+  def pipe_out(args, split=False, shell=False,
+               text=True, encoding=None, errors=None,
+               **popen_args):
     """Executes a shell command, piping out the stdout to python for parsing.
-    This is my customary shortcut for backtick operator.
-    The result is either a single string (if split==False) or a list of strings
-    with EOLs removed (if split==True)."""
-    retval = subprocess.Popen(args, stdout=subprocess.PIPE, shell=shell).communicate()[0]
+    This is my customary shortcut for backtick operator, and by default it is
+    meant for text processing--therefore, the default `text=True`.
+    The result is either a single string (if `split==False`) or a list of strings
+    with EOLs removed (if `split==True`).
+
+    The `text` argument is honored on Python 3.7+ only."""
+    extra_args = dict(
+      stdout=subprocess.PIPE,
+      shell=shell
+    )
+    if __py_ver_maj >= 3:
+      if __py_ver >= (3,7):
+        extra_args["text"] = text
+      else:
+        extra_args["universal_newlines"] = text
+      extra_args["encoding"] = encoding
+      extra_args["errors"] = errors
+    else:
+      extra_args["universal_newlines"] = text
+    extra_args.update(popen_args)
+
+    retval = subprocess.Popen(args, **extra_args).communicate()[0]
     if not split:
       return retval
     else:
       return retval.splitlines()
 
-  class pipe_in:
+  class pipe_in(object):
     """Executes a shell command, piping in the stdin from python for driving.
     This is the reverse of pipe_out.
-    Commands are given through file-like write() or writelines() methods."""
-    def __init__(self, args, shell=False):
-      self.px = subprocess.Popen(args, stdin=subprocess.PIPE, shell=shell)
+    Input data are given through file-like write() or writelines() methods.
+    The `text` argument is honored on Python 3+ only."""
+    def __init__(self, args, shell=False, text=True):
+      extra_args = dict(
+        stdin=subprocess.PIPE,
+        shell=shell
+        )
+      if sys.version_info.major >= 3:
+        extra_args["text"] = text
+
+      self.px = subprocess.Popen(args, **extra_args)
       self.args = args
     def write(self, line):
       self.px.stdin.write(line)
