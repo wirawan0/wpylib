@@ -351,7 +351,7 @@ class Parameters(dict):
     else:
       for ov in self._list_:
         if key in ov: return ov[key]
-    raise KeyError, "Cannot find parameter `%s'" % key
+    raise KeyError("Cannot find parameter `%s'" % key)
   #def __setitem__(self, key, value):  # -- inherited from dict
   #  self._prm_[key] = value
 

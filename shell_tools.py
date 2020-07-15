@@ -8,6 +8,7 @@
 # scripts.
 #
 
+from __future__ import print_function
 import glob
 import os
 import os.path
@@ -18,14 +19,14 @@ try:
   has_subprocess = True
 except:
   if "has_subprocess" not in globals():
-    print >>sys.stderr, "Newer subprocess module does not exist, using older interfaces."
+    print("Newer subprocess module does not exist, using older interfaces.", file=sys.stderr)
   has_subprocess = False
 
 
 # Files, directories, and filename utilities
 
 def mcd(subdir):
-  # Assuming we have GNU coreutils' mkdir
+  # Assuming we have mkdir that can take the `-p` argument
   mkdir("-p", subdir)
   os.chdir(subdir)
 
@@ -85,8 +86,9 @@ def getenv(*names, **opts):
   if "default" in opts:
     return opts["default"]
   else:
-    raise KeyError, \
+    raise KeyError(
       "Cannot find value among environment variables: %s" % (str(names))
+    )
 
 # Low-level utilities:
 
@@ -94,12 +96,12 @@ def errchk(cmd, args, retcode):
   """Checking for error after the invocation of an external command."""
   if retcode == 0: return
 
-  print >>sys.stderr, "Error executing ", cmd, " ".join(args)
+  print("Error executing ", cmd, " ".join(args), file=sys.stderr)
   if retcode < 0:
     err = "Command %s was terminated by signal %d" % (cmd, -retcode)
   else:
     err = "Command %s returned %d" % (cmd, retcode)
-  raise RuntimeError, err
+  raise RuntimeError(err)
 
 
 def quote_cmdline(seq):
