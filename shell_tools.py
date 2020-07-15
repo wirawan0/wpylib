@@ -16,11 +16,18 @@ import sys
 try:
   import subprocess
   has_subprocess = True
-except:
+except ImportError:
+  # This is really-really old. It should not matter anymore unless you
+  # run on ultra-archaic systems that has Python < 2.4
   if "has_subprocess" not in globals():
-    sys.stderr.write("Newer subprocess module does not exist, using older interfaces.\n")
+    sys.stderr.write("subprocess module does not exist, using older interfaces.\n")
     sys.stderr.flush()
   has_subprocess = False
+
+
+# To help with Python version incompatibilities
+__py_ver_maj = sys.version_info.major
+__py_ver = (sys.version_info.major, sys.version_info.minor)
 
 
 # Files, directories, and filename utilities
@@ -178,8 +185,11 @@ if has_subprocess:
 
 else:
 
+  # Python < 2.4 does not have subprocess, so we use spawnvp
+  # (April 2020) BEWARE THAT THIS SECTION IS LARGELY UNSUPPORTED.
+  # Many newer options are not implemented here.
+
   def run(prg, args=()):
-    # Python < 2.4 does not have subprocess, so we use spawnvp
     retcode = os.spawnvp(os.P_WAIT, prg, (prg,) + tuple(args))
     errchk(prg, args, retcode)
     return 0
@@ -284,7 +294,7 @@ CMD_NAME = {}
 for n in CMD:
   CMD_NAME[n] = n
   s = """def %(cmd)s(*args): run(CMD_NAME['%(cmd)s'], args)"""
-  exec s % {'cmd': n }
+  exec(s % {'cmd': n })
 
 def import_commands(namespace, cmds=None):
   """Safely import shell commands to a given namespace.
