@@ -4,8 +4,10 @@
 # Created: 20091204
 # Wirawan Purwanto
 #
-pass
 
+from __future__ import print_function
+from __future__ import division
+import sys
 import numpy
 
 
@@ -16,6 +18,13 @@ class MathWarning(Warning):
 
 
 ZERO_TOL = 5.0e-16
+
+
+# Handle quirks of python2 vs python3
+if sys.version_info.major >= 3:
+  # simulate "long" function to help write compatible code
+  long = lambda X: X
+
 
 
 def ztol(val, tol=None, copy=True):
@@ -34,7 +43,7 @@ def ztol(val, tol=None, copy=True):
     numpy.putmask(rslt, numpy.abs(rslt) < tol, [0])
     return rslt
   else:
-    raise ValueError, "Unsupported datatype: %s" % str(type(val))
+    raise ValueError("Unsupported datatype: %s" % str(type(val)))
 
 
 def epsilon(dtype):
@@ -48,7 +57,7 @@ def epsilon(dtype):
   small2 = small
   while one + small > one:
     small2 = small
-    small = dtype(small / 2)
+    small = dtype(small // 2)
   return small2
 
 
@@ -88,7 +97,7 @@ def choose(n,r):
   assert n >= 0
   assert 0 <= r <= n
 
-  c = 1L
+  c = long(1)
   denom = 1
   for (num,denom) in zip(xrange(n,n-r,-1), xrange(1,r+1,1)):
     c = (c * num) // denom
