@@ -33,7 +33,7 @@ __py_ver = (sys.version_info.major, sys.version_info.minor)
 # Files, directories, and filename utilities
 
 def mcd(subdir):
-  # Assuming we have GNU coreutils' mkdir
+  # Assuming we have mkdir that can take the `-p` argument
   mkdir("-p", subdir)
   os.chdir(subdir)
 

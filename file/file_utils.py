@@ -86,7 +86,7 @@ def open_input_file(fname, superize=0):
                              ("lzma", "xz"),
                              filetest=is_executable_file)
       if lzma_exe == None:
-        raise IOError, "Cannot find lzma or xz executable file."
+        raise IOError("Cannot find lzma or xz executable file.")
       if has_subprocess:
         px = subprocess.Popen((lzma_exe, "-dc", fname), stdout=subprocess.PIPE)
         fobj = px.stdout
@@ -220,7 +220,7 @@ def glob_files(filespec):
   elif isinstance(filespec, basestring):
     return sorted(glob.glob(filespec))
   else:
-    raise ValueError, "Don't know how to glob for an object of " + type(filespec)
+    raise ValueError("Don't know how to glob for an object of " + type(filespec))
 
 
 # - file searches and filesystem scans
@@ -303,14 +303,14 @@ def path_search(*specs, **opts):
     xstride.append(xtot)
     xtot *= xlen[-1]
 
-  for idx in xrange(xtot):
+  for idx in range(xtot):
     idx0 = idx
     # Construct the filename based on the index: we reconstruct
     # the indices for all the parts given in the argument, then
     # concatenate them to get the full pathname
     s = ""
-    for d in xrange(len(xspecs)-1,-1,-1):
-      a = idx0 / xstride[d]
+    for d in range(len(xspecs)-1,-1,-1):
+      a = idx0 // xstride[d]
       if s == "":
         s = xspecs[d][a]
       else:
@@ -322,7 +322,7 @@ def path_search(*specs, **opts):
       return s
 
   if opts.get("raise_error", False):
-    raise ValueError, "Cannot find file with specified combination"
+    raise ValueError("Cannot find file with specified combination")
   else:
     return None
 
@@ -376,7 +376,7 @@ def untar(archive, subdir=None, verbose=None, files=[]):
     opts.append("--use-compress-program=xz")
 
   if verbose:
-    for i in xrange(verbose): opts.append("-v")
+    for i in range(verbose): opts.append("-v")
 
   opts += [ "-xf", archive ]
   opts += files
