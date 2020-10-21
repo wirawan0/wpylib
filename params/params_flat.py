@@ -37,14 +37,13 @@ class ActiveReadValue(object):
                   fullpath=ActiveReadValue(lambda p : \
                     os.path.join(p.root, p.basename + p.ext)))
 
-  print PP.fullpath  # gives "/usr/local/lib/libfoo.so.3"
+  print(PP.fullpath)  # gives "/usr/local/lib/libfoo.so.3"
   PP.ext = ".a"
-  print PP.fullpath  # gives "/usr/local/lib/libfoo.a"
+  print(PP.fullpath)  # gives "/usr/local/lib/libfoo.a"
   """
   def __init__(self, function):
     if not hasattr(self, "__call__"):
-      raise TypeError, \
-        ("Initializing ActiveReadValue object with a non-callable argument")
+      raise TypeError("Initializing ActiveReadValue object with a non-callable argument")
     self._function = function
   def __call__(self, p):
     return self._function(p)
@@ -280,7 +279,7 @@ class Parameters(dict):
         else:
           # See (NOTE.1)
           return self._ActiveReadValue_(v)
-    raise KeyError, "Cannot find parameter `%s'" % key
+    raise KeyError("Cannot find parameter `%s'" % key)
   #def __setitem__(self, key, value):  # -- inherited from dict
   #  self._prm_[key] = value
   def _ActiveReadValue_(self, val):
@@ -475,10 +474,11 @@ class Parameters(dict):
         # add this minimal check for a dict-like behavior rather
         # than encountering a strange error later
         if not hasattr(_opts_, "__getitem__") or not hasattr(_opts_, "__contains__"):
-          raise TypeError, \
+          raise TypeError(\
             ("The keyword parameter (variable/parameter `%s' in function `%s')" +
              " is not a dict-like object)") \
             % (_kwparam_, caller.f_code.co_name)
+          )
         contexts.append(_opts_)
     else:
       _opts_ = {}
@@ -489,10 +489,11 @@ class Parameters(dict):
         # add this minimal check for a dict-like behavior rather
         # than encountering a strange error later
         if not hasattr(opts, "__getitem__") or not hasattr(opts, "__contains__"):
-          raise TypeError, \
+          raise TypeError(
             ("The user parameter (variable/parameter `%s' in function `%s')" +
              " is not a dict-like object)") \
             % (_userparam_, caller.f_code.co_name)
+          )
         contexts.append(opts)
     else:
       if _userparam_ in _opts_:
@@ -501,10 +502,11 @@ class Parameters(dict):
           # add this minimal check for a dict-like behavior rather
           # than encountering a strange error later
           if not hasattr(opts, "__getitem__") or not hasattr(opts, "__contains__"):
-            raise TypeError, \
+            raise TypeError(
               ("The user parameter (variable/parameter `%s' in function `%s')" +
                " is not a dict-like object)") \
               % (_userparam_, caller.f_code.co_name)
+            )
           contexts.append(opts)
 
     # then this own Parameters data will come here:
